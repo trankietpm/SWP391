@@ -1,0 +1,172 @@
+.welcome {
+  padding: 80px 0;
+  background: linear-gradient(135deg, #f0fdf4 0%, #ecfdf5 100%);
+  position: relative;
+  overflow: hidden;
+}
+
+.container {
+  max-width: 1240px;
+  margin: 0 auto;
+  padding: 0 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 60px;
+  align-items: center;
+  min-height: 500px;
+}
+
+.textSection {
+  padding-right: 20px;
+}
+
+.title {
+  font-size: 48px;
+  font-weight: 700;
+  color: #2FA71D;
+  margin-bottom: 24px;
+  line-height: 1.2;
+  
+  @media (max-width: 768px) {
+    font-size: 36px;
+  }
+  
+  @media (max-width: 480px) {
+    font-size: 28px;
+  }
+}
+
+.description {
+  font-size: 18px;
+  line-height: 1.7;
+  color: #374151;
+  margin-bottom: 32px;
+  font-weight: 400;
+  
+  @media (max-width: 768px) {
+    font-size: 16px;
+  }
+}
+
+.scheduleButton {
+  background: linear-gradient(135deg, #2FA71D, #26991A) !important;
+  border: none !important;
+  border-radius: 12px !important;
+  height: 50px !important;
+  padding: 0 32px !important;
+  font-size: 16px !important;
+  font-weight: 600 !important;
+  box-shadow: 0 4px 15px rgba(47, 167, 29, 0.3) !important;
+  transition: all 0.3s ease !important;
+  
+  &:hover {
+    transform: translateY(-2px) !important;
+    box-shadow: 0 6px 20px rgba(47, 167, 29, 0.4) !important;
+  }
+  
+  &:active {
+    transform: translateY(0) !important;
+  }
+}
+
+.imageSection {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+.imageContainer {
+  width: 100%;
+  max-width: 500px;
+  border-radius: 20px;
+  overflow: hidden;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.1);
+  position: relative;
+  
+  &::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: linear-gradient(135deg, rgba(47, 167, 29, 0.15), rgba(38, 153, 26, 0.1));
+    z-index: 1;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+  }
+  
+  &:hover::before {
+    opacity: 1;
+  }
+}
+
+.welcomeImage {
+  width: 100%;
+  height: auto;
+  display: block;
+  object-fit: cover;
+  transition: transform 0.3s ease;
+  
+  .imageContainer:hover & {
+    transform: scale(1.05);
+  }
+}
+
+// Responsive Design
+@media (max-width: 1024px) {
+  .content {
+    gap: 40px;
+  }
+  
+  .textSection {
+    padding-right: 0;
+  }
+}
+
+@media (max-width: 768px) {
+  .welcome {
+    padding: 60px 0;
+  }
+  
+  .content {
+    grid-template-columns: 1fr;
+    gap: 40px;
+    text-align: center;
+  }
+  
+  .textSection {
+    order: 1;
+  }
+  
+  .imageSection {
+    order: 2;
+  }
+  
+  .imageContainer {
+    max-width: 400px;
+  }
+}
+
+@media (max-width: 480px) {
+  .welcome {
+    padding: 40px 0;
+  }
+  
+  .container {
+    padding: 0 15px;
+  }
+  
+  .content {
+    gap: 30px;
+  }
+  
+  .imageContainer {
+    max-width: 300px;
+  }
+}

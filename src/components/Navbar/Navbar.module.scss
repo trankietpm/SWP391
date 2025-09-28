@@ -1,0 +1,256 @@
+.navbar {
+  background: #fff;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  backdrop-filter: blur(10px);
+  border-bottom: 1px solid rgba(47, 167, 29, 0.1);
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  height: 80px;
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  
+  .logoImage {
+    height: 103px;
+    width: auto;
+    object-fit: contain;
+    filter: drop-shadow(0 2px 4px rgba(47, 167, 29, 0.2));
+  }
+}
+
+.menu {
+  display: flex;
+  list-style: none;
+  gap: 35px;
+  margin: 0;
+  padding: 0;
+  
+  li {
+    position: relative;
+    
+    a {
+      color: #333;
+      text-decoration: none;
+      font-weight: 500;
+      font-size: 18px;
+      padding: 8px 0;
+      transition: all 0.3s ease;
+      position: relative;
+      display: block;
+      
+      &:hover {
+        color: #2FA71D;
+        transform: translateY(-1px);
+      }
+      
+      &::after {
+        content: '';
+        position: absolute;
+        bottom: 0;
+        left: 0;
+        width: 0;
+        height: 2px;
+        background: #2FA71D;
+        transition: width 0.3s ease;
+      }
+      
+      &:hover::after {
+        width: 100%;
+      }
+      
+      &.active {
+        color: #2FA71D;
+        font-weight: 600;
+        
+        &::after {
+          width: 100%;
+        }
+      }
+    }
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 15px;
+}
+
+.loginBtn {
+  background: linear-gradient(135deg, #2FA71D, #26991A);
+  border: none;
+  color: #fff;
+  padding: 12px 30px;
+  border-radius: 200px;
+  font-weight: 600;
+  font-size: 18px;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  box-shadow: 0 4px 15px rgba(47, 167, 29, 0.3);
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 6px 20px rgba(47, 167, 29, 0.4);
+    background: linear-gradient(135deg, #26991A, #1e7a16);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+// Tablet responsive
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 15px;
+    height: 75px;
+  }
+  
+  .menu {
+    gap: 25px;
+  }
+  
+  .logoImage {
+    height: 90px;
+  }
+}
+
+// Hamburger menu
+.hamburger {
+  display: none;
+  flex-direction: column;
+  justify-content: space-around;
+  width: 30px;
+  height: 30px;
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  z-index: 1001;
+  
+  span {
+    width: 100%;
+    height: 3px;
+    background: #333;
+    border-radius: 2px;
+    transition: all 0.3s ease;
+    transform-origin: center;
+  }
+  
+  &.hamburgerOpen {
+    span:nth-child(1) {
+      transform: rotate(45deg) translate(6px, 6px);
+    }
+    
+    span:nth-child(2) {
+      opacity: 0;
+    }
+    
+    span:nth-child(3) {
+      transform: rotate(-45deg) translate(6px, -6px);
+    }
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+    height: 70px;
+  }
+  
+  .logoImage {
+    height: 65px;
+  }
+  
+  .hamburger {
+    display: flex;
+  }
+  
+  .menu {
+    position: fixed;
+    top: 60px;
+    left: 0;
+    right: 0;
+    background: #fff;
+    box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
+    flex-direction: column;
+    padding: 20px;
+    transform: translateY(-100%);
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.3s ease;
+    z-index: 1000;
+    
+    &.menuOpen {
+      transform: translateY(0);
+      opacity: 1;
+      visibility: visible;
+    }
+    
+    li {
+      margin: 10px 0;
+      
+      a {
+        display: block;
+        padding: 12px 0;
+        font-size: 16px;
+        border-bottom: 1px solid #f0f0f0;
+        
+        &:hover {
+          color: #2FA71D;
+          background: #f8f9fa;
+          padding-left: 10px;
+        }
+      }
+    }
+  }
+  
+  .actions {
+    display: none;
+  }
+}
+
+// Small mobile
+@media (max-width: 480px) {
+  .container {
+    padding: 0 8px;
+    height: 65px;
+  }
+  
+  .logoImage {
+    height: 55px;
+  }
+  
+  .hamburger {
+    width: 25px;
+    height: 25px;
+    
+    span {
+      height: 2px;
+    }
+  }
+  
+  .menu {
+    top: 55px;
+    padding: 15px;
+    
+    li a {
+      padding: 10px 0;
+      font-size: 15px;
+    }
+  }
+}
