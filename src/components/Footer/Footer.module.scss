@@ -1,0 +1,214 @@
+.footer {
+  background: #1f2937;
+  color: #fff;
+  margin-top: auto;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
+}
+
+.content {
+  display: grid;
+  grid-template-columns: 2fr 1fr 1fr 1fr;
+  gap: 40px;
+  padding: 60px 0 40px;
+}
+
+.section {
+  h3 {
+    color: #2FA71D;
+    font-size: 24px;
+    font-weight: 700;
+    margin-bottom: 20px;
+  }
+  
+  h4 {
+    color: #fff;
+    font-size: 18px;
+    font-weight: 600;
+    margin-bottom: 20px;
+  }
+  
+  p {
+    color: #d1d5db;
+    line-height: 1.6;
+    margin-bottom: 20px;
+  }
+  
+  ul {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    
+    li {
+      margin-bottom: 10px;
+      
+      a {
+        color: #d1d5db;
+        text-decoration: none;
+        transition: color 0.3s ease;
+        
+        &:hover {
+          color: #2FA71D;
+        }
+      }
+    }
+  }
+}
+
+.social {
+  display: flex;
+  gap: 15px;
+  margin-top: 20px;
+}
+
+.socialLink {
+  color: #d1d5db;
+  text-decoration: none;
+  padding: 8px 12px;
+  border: 1px solid #374151;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    color: #2FA71D;
+    border-color: #2FA71D;
+  }
+}
+
+.contact {
+  p {
+    color: #d1d5db;
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+}
+
+.bottom {
+  border-top: 1px solid #374151;
+  padding: 20px 0;
+  text-align: center;
+  
+  p {
+    color: #9ca3af;
+    margin: 0;
+  }
+}
+
+// Tablet responsive
+@media (max-width: 1024px) {
+  .container {
+    padding: 0 15px;
+  }
+  
+  .content {
+    grid-template-columns: 2fr 1fr 1fr;
+    gap: 30px;
+    padding: 50px 0 35px;
+  }
+  
+  .section {
+    h3 {
+      font-size: 22px;
+    }
+    
+    h4 {
+      font-size: 16px;
+    }
+  }
+}
+
+// Mobile responsive
+@media (max-width: 768px) {
+  .container {
+    padding: 0 10px;
+  }
+  
+  .content {
+    grid-template-columns: 1fr;
+    gap: 25px;
+    padding: 40px 0 30px;
+  }
+  
+  .section {
+    text-align: center;
+    
+    h3 {
+      font-size: 20px;
+    }
+    
+    h4 {
+      font-size: 16px;
+    }
+    
+    p {
+      font-size: 14px;
+    }
+  }
+  
+  .social {
+    justify-content: center;
+    gap: 10px;
+  }
+  
+  .socialLink {
+    padding: 6px 10px;
+    font-size: 14px;
+  }
+  
+  .contact p {
+    font-size: 14px;
+  }
+}
+
+// Small mobile
+@media (max-width: 480px) {
+  .container {
+    padding: 0 8px;
+  }
+  
+  .content {
+    gap: 20px;
+    padding: 30px 0 25px;
+  }
+  
+  .section {
+    h3 {
+      font-size: 18px;
+    }
+    
+    h4 {
+      font-size: 15px;
+    }
+    
+    p {
+      font-size: 13px;
+    }
+  }
+  
+  .social {
+    gap: 8px;
+  }
+  
+  .socialLink {
+    padding: 5px 8px;
+    font-size: 12px;
+  }
+  
+  .contact p {
+    font-size: 13px;
+  }
+  
+  .bottom {
+    padding: 15px 0;
+    
+    p {
+      font-size: 12px;
+    }
+  }
+}
