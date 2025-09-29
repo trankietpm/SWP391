@@ -1,0 +1,236 @@
+// Features Highlight Section
+.featuresHighlight {
+  padding: 100px 0;
+  background: #ffffff;
+}
+
+.featuresTitle {
+  text-align: center;
+  font-size: 42px;
+  font-weight: 700;
+  color: #2FA71D;
+  margin-bottom: 40px;
+  line-height: 1.2;
+}
+
+.featuresContent {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+  align-items: center;
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.featuresLeft {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+.featuresRight {
+  display: flex;
+  flex-direction: column;
+  gap: 50px;
+}
+
+.carImage {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  
+  img {
+    max-width: 100%;
+    height: auto;
+    max-height: 500px;
+    object-fit: contain;
+  }
+  
+  // For Next.js Image component
+  span {
+    display: block !important;
+    
+    img {
+      max-width: 100%;
+      height: auto;
+      max-height: 500px;
+      object-fit: contain;
+    }
+  }
+}
+
+.featureCard {
+  display: flex;
+  align-items: flex-start;
+  gap: 20px;
+  padding: 0;
+  background: transparent;
+  border: none;
+  box-shadow: none;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    transform: none;
+    box-shadow: none;
+    border: none;
+  }
+}
+
+.featureIcon {
+  width: 50px;
+  height: 50px;
+  background: #2FA71D;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+  color: white;
+  flex-shrink: 0;
+  transition: all 0.3s ease;
+}
+
+.featureCard:hover .featureIcon {
+  transform: scale(1.05);
+  background: #26991A;
+}
+
+.featureContent {
+  flex: 1;
+}
+
+.featureTitle {
+  font-size: 18px;
+  font-weight: 700;
+  color: #1e293b;
+  margin-bottom: 8px;
+  line-height: 1.3;
+}
+
+.featureDescription {
+  font-size: 14px;
+  line-height: 1.5;
+  color: #64748b;
+  margin: 0;
+}
+
+// Left features - text left aligned
+.featuresLeft .featureCard {
+  flex-direction: row;
+  
+  .featureContent {
+    text-align: left;
+  }
+}
+
+// Right features - text right aligned  
+.featuresRight .featureCard {
+  flex-direction: row-reverse;
+  
+  .featureContent {
+    text-align: right;
+  }
+}
+
+// Responsive for Features Highlight
+@media (max-width: 1024px) {
+  .featuresContent {
+    grid-template-columns: 1fr;
+    gap: 60px;
+    text-align: center;
+  }
+  
+  .featuresLeft,
+  .featuresRight {
+    gap: 40px;
+  }
+  
+  .carImage {
+    order: -1;
+  }
+  
+  .featuresLeft .featureCard,
+  .featuresRight .featureCard {
+    flex-direction: row;
+    justify-content: center;
+  }
+  
+  .featuresLeft .featureContent,
+  .featuresRight .featureContent {
+    text-align: left;
+  }
+}
+
+@media (max-width: 768px) {
+  .featuresHighlight {
+    padding: 80px 0;
+  }
+  
+  .featuresTitle {
+    font-size: 36px;
+    margin-bottom: 60px;
+  }
+  
+  .featuresContent {
+    gap: 40px;
+  }
+  
+  .featuresLeft,
+  .featuresRight {
+    gap: 30px;
+  }
+  
+  .featureIcon {
+    width: 45px;
+    height: 45px;
+    font-size: 18px;
+  }
+  
+  .featureTitle {
+    font-size: 16px;
+  }
+  
+  .featureDescription {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 480px) {
+  .featuresHighlight {
+    padding: 60px 0;
+  }
+  
+  .featuresTitle {
+    font-size: 28px;
+    margin-bottom: 40px;
+  }
+  
+  .featuresContent {
+    gap: 30px;
+  }
+  
+  .featuresLeft,
+  .featuresRight {
+    gap: 25px;
+  }
+  
+  .featureCard {
+    flex-direction: column;
+    text-align: center;
+    gap: 15px;
+  }
+  
+  .featureIcon {
+    width: 40px;
+    height: 40px;
+    font-size: 16px;
+    margin: 0 auto;
+  }
+  
+  .featureTitle {
+    font-size: 15px;
+  }
+  
+  .featureDescription {
+    font-size: 12px;
+  }
+}
