@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import "./globals.css";
-import Navbar from "@/components/Navbar/Navbar";
-import Footer from "@/components/Footer/Footer";
+import { AuthProvider } from "@/contexts/AuthContext";
+import ConditionalLayout from "@/components/ConditionalLayout/ConditionalLayout";
 
 export const metadata: Metadata = {
   title: "EVS Rent - Dịch vụ cho thuê xe máy điện và ô tô điện",
@@ -19,11 +19,11 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body>
-        <Navbar />
-        <main className="main-content">
-          {children}
-        </main>
-        <Footer />
+        <ConditionalLayout>
+          <AuthProvider>
+            {children}
+          </AuthProvider>
+        </ConditionalLayout>
       </body>
     </html>
   );
