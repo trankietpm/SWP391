@@ -82,8 +82,10 @@ function Navbar() {
           </li>
         </ul>
         
-        <div className={styles.actions}>
-          <button className={styles.loginBtn}>Đăng nhập</button>
+       <div className={styles.actions}>
+          <Link href="/sign-in" className={styles.loginBtn}>
+            Đăng nhập
+          </Link>
         </div>
         
         <button 

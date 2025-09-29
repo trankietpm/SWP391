@@ -1,0 +1,176 @@
+.formSection {
+  flex: 2;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 40px;
+  position: relative;
+}
+
+.formContainer {
+  width: 100%;
+  max-width: 488px;
+  text-align: center;
+}
+
+.backButton {
+  position: absolute;
+  top: 1%;
+  left: 1%;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: transform 0.3s ease;
+  z-index: 10;
+
+  &:hover {
+    transform: scale(1.1);
+  }
+}
+
+.backIcon {
+  object-fit: contain;
+}
+
+.title {
+  font-size: 32px;
+  color: #1e40af;
+  margin-bottom: 20px;
+  font-weight: 600;
+}
+
+.description {
+  font-size: 16px;
+  color: #000;
+  margin-bottom: 40px;
+  line-height: 1.5;
+  text-align: center;
+}
+
+.verificationForm {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+}
+
+.inputGroup {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  text-align: left;
+}
+
+.inputGroup label {
+  font-size: 18px;
+  color: #000;
+  font-weight: 500;
+  margin-bottom: 5px;
+}
+
+.codeInput {
+  padding: 18px 24px;
+  border: 2px solid #E6E6E6;
+  border-radius: 10px;
+  font-size: 16px;
+  background-color: white;
+  color: #000;
+  transition: border-color 0.3s ease;
+
+  &:focus {
+    outline: none;
+    border-color: #1e40af;
+  }
+
+  &::placeholder {
+    color: #9ca3af;
+  }
+}
+
+.resendSection {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: -10px;
+}
+
+.resendButton {
+  background: none;
+  border: none;
+  color: #6b7280;
+  font-size: 14px;
+  cursor: pointer;
+  text-decoration: underline;
+
+  &:hover:not(.disabled) {
+    color: #374151;
+  }
+
+  &.disabled {
+    cursor: not-allowed;
+    opacity: 0.5;
+  }
+}
+
+.timer {
+  color: #FCBC12;
+  font-size: 14px;
+  font-weight: 500;
+}
+
+.verifyButton {
+  background-color: #FCBC12;
+  color: white;
+  padding: 20px 40px;
+  border: none;
+  border-radius: 200px;
+  font-size: 22px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background-color 0.3s ease;
+  margin-top: 20px;
+
+  &:hover {
+    background-color: #E6A500;
+  }
+
+  &:active {
+    transform: translateY(1px);
+  }
+}
+
+// Responsive design
+@media (max-width: 1024px) {
+  .formSection {
+    flex: 1;
+    padding: 30px 20px;
+  }
+}
+
+@media (max-width: 768px) {
+  .formSection {
+    padding: 20px 15px;
+  }
+
+  .title {
+    font-size: 28px;
+  }
+
+  .formContainer {
+    max-width: 100%;
+  }
+}
+
+@media (max-width: 480px) {
+  .title {
+    font-size: 24px;
+  }
+
+  .description {
+    font-size: 14px;
+  }
+} 
