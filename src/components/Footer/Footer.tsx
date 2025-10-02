@@ -9,11 +9,6 @@ function Footer() {
           <div className={styles.section}>
             <h3>EVS Rent</h3>
             <p>Dịch vụ cho thuê xe máy điện và ô tô điện hàng đầu Việt Nam. Cam kết mang đến trải nghiệm di chuyển xanh, tiết kiệm và thân thiện với môi trường.</p>
-            <div className={styles.social}>
-              <a href="#" className={styles.socialLink}>Facebook</a>
-              <a href="#" className={styles.socialLink}>Instagram</a>
-              <a href="#" className={styles.socialLink}>Twitter</a>
-            </div>
           </div>
           
           <div className={styles.section}>
@@ -21,7 +16,7 @@ function Footer() {
             <ul>
               <li><a href="#">Thuê xe máy điện</a></li>
               <li><a href="#">Thuê ô tô điện</a></li>
-              <li><a href="#">Bảo dưỡng xe</a></li>
+              <li><a href="#">Dịch vụ</a></li>
               <li><a href="#">Hỗ trợ 24/7</a></li>
             </ul>
           </div>
@@ -39,9 +34,9 @@ function Footer() {
           <div className={styles.section}>
             <h4>Liên hệ</h4>
             <div className={styles.contact}>
-              <p>📞 1900 1234</p>
-              <p>✉️ info@evsrent.com</p>
-              <p>📍 123 Đường ABC, Quận 1, TP.HCM</p>
+              <p>1900 1234</p>
+              <p>sap490capstone@gmail.com</p>
+              <p>123 Đường ABC, Quận 1, TP.HCM</p>
             </div>
           </div>
         </div>
