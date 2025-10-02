@@ -11,6 +11,7 @@ import {
   ClockCircleOutlined,
   DollarOutlined,
 } from '@ant-design/icons'
+import PopularVehicles from '@/components/PopularVehicles/PopularVehicles'
 
 function Homepage() {
   const whyChooseUsData = {
@@ -71,6 +72,9 @@ function Homepage() {
       </div>
       <div className={styles.whyChooseUs}>
         <FeaturesHighlight {...whyChooseUsData} />
+      </div>
+      <div className={styles.popularVehicles}>
+        <PopularVehicles />
       </div>
     </div>
   )
