@@ -9,7 +9,7 @@ services:
       - ./uploads:/directus/uploads
       - ./extensions:/directus/extensions
     env_file:
-      - .env
+      - config.env
     environment:
       SECRET: "evs-rent-secure-secret-key-2024"
       ADMIN_EMAIL: "admin@gmail.com"
