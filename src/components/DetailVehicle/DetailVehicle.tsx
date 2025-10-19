@@ -1,590 +1,150 @@
 "use client";
-import React, { useState } from 'react';
-import { CarOutlined, ThunderboltOutlined, StarOutlined, DollarOutlined, LeftOutlined, RightOutlined, CheckOutlined, ClockCircleOutlined, SafetyOutlined, EnvironmentOutlined } from '@ant-design/icons';
+import React, { useState, useEffect } from 'react';
+import { CarOutlined, ThunderboltOutlined, StarOutlined, LeftOutlined, RightOutlined, CheckOutlined, ClockCircleOutlined, SafetyOutlined, EnvironmentOutlined, PictureOutlined, CloseOutlined } from '@ant-design/icons';
+import { DatePicker } from 'antd';
+import dayjs from 'dayjs';
+import Link from 'next/link';
+import { carService, Car } from '../../services/car.service';
+import { stationService, Station } from '../../services/station.service';
 import styles from './DetailVehicle.module.scss';
 
-interface VehicleDetail {
-  id: number;
-  name: string;
-  type: string;
-  images: string[];
-  price: string;
-  rating: number;
-  features: string[];
-  isPopular: boolean;
-  description: string;
-  specifications: {
-    battery: string;
-    range: string;
-    charging: string;
-    seats: string;
-    topSpeed: string;
-    acceleration: string;
-  };
-  highlights: string[];
-  colors: {
-    name: string;
-    hex: string;
-    available: boolean;
-  }[];
-  rentalInfo: {
-    deposit: string;
-    insurance: string;
-    delivery: string;
-    cancellation: string;
-  };
-}
 
 interface DetailVehicleProps {
   vehicleId?: number;
 }
 
 const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
-  const [currentImageIndex, setCurrentImageIndex] = useState(0);
-  const [activeTab, setActiveTab] = useState<'overview' | 'specs' | 'rental'>('overview');
-  const [selectedColor, setSelectedColor] = useState(0);
+  const [showGallery, setShowGallery] = useState(false);
+  const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
+  const [totalDays, setTotalDays] = useState(0);
+  const [totalPrice, setTotalPrice] = useState(0);
+  const [vehicle, setVehicle] = useState<Car | null>(null);
+  const [station, setStation] = useState<Station | null>(null);
+  const [carFiles, setCarFiles] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [showDocumentsModal, setShowDocumentsModal] = useState(false);
+  const [showCollateralModal, setShowCollateralModal] = useState(false);
 
-  // All vehicles data
-  const allVehicles: VehicleDetail[] = [
-    // 4 wheelers
-    {
-      id: 1,
-      name: "VinFast VF8",
-      type: "Ô tô điện",
-      images: [
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-banner-11042025.jpg",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-den.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-trang.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-xam.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-xanh-la.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-xanh.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-ngoai-that-11042025-1.jpg",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-trang.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-xam.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-xanh-la.png",
-        "/images/4 wheelers/VF/VF8/vinfast-vf8-mau-xe-xanh.png",
-      ],
-      price: "2,500,000 VNĐ/ngày",
-      rating: 4.8,
-      features: ["Pin 400km", "Sạc nhanh 30 phút", "5 chỗ ngồi"],
-      isPopular: true,
-      description: "VinFast VF8 là mẫu SUV điện cao cấp với thiết kế hiện đại, công nghệ tiên tiến và hiệu suất vượt trội. Xe được trang bị pin lithium-ion dung lượng lớn, cho phép di chuyển lên đến 400km với một lần sạc.",
-      specifications: {
-        battery: "Pin Lithium-ion 87.7 kWh",
-        range: "400km (WLTP)",
-        charging: "Sạc nhanh DC 150kW",
-        seats: "5 chỗ ngồi",
-        topSpeed: "200 km/h",
-        acceleration: "0-100 km/h trong 5.5 giây"
-      },
-      highlights: [
-        "Thiết kế SUV hiện đại và sang trọng",
-        "Công nghệ sạc nhanh tiên tiến",
-        "Hệ thống an toàn thông minh",
-        "Nội thất cao cấp với vật liệu bền vững",
-        "Kết nối thông minh và giải trí đa phương tiện"
-      ],
-      colors: [
-        {
-          name: "Đen",
-          hex: "#1a1a1a",
-          available: true
-        },
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xám",
-          hex: "#6b7280",
-          available: true
-        },
-        {
-          name: "Xanh lá",
-          hex: "#10b981",
-          available: true
-        },
-        {
-          name: "Xanh dương",
-          hex: "#3b82f6",
-          available: false
-        }
-      ],
-      rentalInfo: {
-        deposit: "5,000,000 VNĐ",
-        insurance: "Bảo hiểm toàn diện",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 2,
-      name: "VinFast VF9",
-      type: "Ô tô điện",
-      images: [
-        "/images/4 wheelers/VF/VF9/banner-vinfast-vf9-10042025.jpg",
-        "/images/4 wheelers/VF/VF9/vinfast-vf9-mau-xe-den.png",
-        "/images/4 wheelers/VF/VF9/vinfast-vf9-mau-xe-trang.png"
-      ],
-      price: "3,500,000 VNĐ/ngày",
-      rating: 4.7,
-      features: ["Pin 600km", "7 chỗ ngồi", "Sạc siêu nhanh"],
-      isPopular: true,
-      description: "VinFast VF9 là mẫu SUV 7 chỗ ngồi với thiết kế sang trọng và không gian rộng rãi. Xe được trang bị công nghệ pin tiên tiến, cho phép di chuyển lên đến 600km với một lần sạc.",
-      specifications: {
-        battery: "Pin Lithium-ion 106 kWh",
-        range: "600km (WLTP)",
-        charging: "Sạc nhanh DC 200kW",
-        seats: "7 chỗ ngồi",
-        topSpeed: "180 km/h",
-        acceleration: "0-100 km/h trong 6.8 giây"
-      },
-      highlights: [
-        "Thiết kế SUV 7 chỗ sang trọng",
-        "Không gian nội thất rộng rãi",
-        "Công nghệ sạc siêu nhanh",
-        "Hệ thống an toàn toàn diện",
-        "Tiện nghi cao cấp cho gia đình"
-      ],
-      colors: [
-        {
-          name: "Đen",
-          hex: "#1a1a1a",
-          available: true
-        },
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Bạc",
-          hex: "#9ca3af",
-          available: true
-        },
-        {
-          name: "Xám đậm",
-          hex: "#374151",
-          available: true
-        }
-      ],
-      rentalInfo: {
-        deposit: "7,000,000 VNĐ",
-        insurance: "Bảo hiểm toàn diện",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 3,
-      name: "VinFast VF5",
-      type: "Ô tô điện",
-      images: [
-        "/images/4 wheelers/VF/VF5/vinfast-vf5-banner.jpg",
-        "/images/4 wheelers/VF/VF5/vinfast-vf5-noi-that-11042025-1.jpg",
-        "/images/4 wheelers/VF/VF5/vinfast-vf5-plus-mau-xe-do-trang.png"
-      ],
-      price: "1,200,000 VNĐ/ngày",
-      rating: 4.5,
-      features: ["Pin 250km", "Thiết kế gọn gàng", "4 chỗ ngồi"],
-      isPopular: false,
-      description: "VinFast VF5 là mẫu xe điện nhỏ gọn, phù hợp cho việc di chuyển trong thành phố. Xe có thiết kế hiện đại và giá cả hợp lý.",
-      specifications: {
-        battery: "Pin Lithium-ion 42 kWh",
-        range: "250km (WLTP)",
-        charging: "Sạc nhanh DC 50kW",
-        seats: "4 chỗ ngồi",
-        topSpeed: "150 km/h",
-        acceleration: "0-100 km/h trong 8.5 giây"
-      },
-      highlights: [
-        "Thiết kế nhỏ gọn, dễ điều khiển",
-        "Giá cả hợp lý",
-        "Tiết kiệm năng lượng",
-        "Phù hợp di chuyển thành phố",
-        "Công nghệ thông minh cơ bản"
-      ],
-      colors: [
-        {
-          name: "Đỏ",
-          hex: "#dc2626",
-          available: true
-        },
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xanh dương",
-          hex: "#2563eb",
-          available: true
-        },
-        {
-          name: "Xám",
-          hex: "#6b7280",
-          available: false
-        }
-      ],
-      rentalInfo: {
-        deposit: "2,400,000 VNĐ",
-        insurance: "Bảo hiểm cơ bản",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 4,
-      name: "VinFast VF6",
-      type: "Ô tô điện",
-      images: [
-        "/images/4 wheelers/VF/VF6/vinfast-vf6-banner.jpg",
-        "/images/4 wheelers/VF/VF6/vinfast-vf6-mau-xe-xam-den.jpg",
-        "/images/4 wheelers/VF/VF6/vinfast-vf6-noi-that-11042025-4.jpg"
-      ],
-      price: "1,500,000 VNĐ/ngày",
-      rating: 4.4,
-      features: ["Pin 280km", "SUV nhỏ gọn", "5 chỗ ngồi"],
-      isPopular: true,
-      description: "VinFast VF6 là mẫu SUV điện nhỏ gọn với thiết kế hiện đại và hiệu suất cao. Xe phù hợp cho gia đình nhỏ và di chuyển trong thành phố.",
-      specifications: {
-        battery: "Pin Lithium-ion 60 kWh",
-        range: "280km (WLTP)",
-        charging: "Sạc nhanh DC 100kW",
-        seats: "5 chỗ ngồi",
-        topSpeed: "160 km/h",
-        acceleration: "0-100 km/h trong 7.2 giây"
-      },
-      highlights: [
-        "Thiết kế SUV nhỏ gọn",
-        "Hiệu suất cao",
-        "Phù hợp gia đình nhỏ",
-        "Tiết kiệm năng lượng",
-        "Công nghệ thông minh"
-      ],
-      colors: [
-        {
-          name: "Xám đậm",
-          hex: "#374151",
-          available: true
-        },
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xanh lá",
-          hex: "#059669",
-          available: true
-        },
-        {
-          name: "Đen",
-          hex: "#1a1a1a",
-          available: true
-        }
-      ],
-      rentalInfo: {
-        deposit: "3,000,000 VNĐ",
-        insurance: "Bảo hiểm toàn diện",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 5,
-      name: "VinFast VF7",
-      type: "Ô tô điện",
-      images: [
-        "/images/4 wheelers/VF/VF7/vinfast-vf7-banner.jpg",
-        "/images/4 wheelers/VF/VF7/vinfast-vf-7-mau-xe-trang.png",
-        "/images/4 wheelers/VF/VF7/vinfast-vf-7-mau-xe-xanh-la.png"
-      ],
-      price: "2,000,000 VNĐ/ngày",
-      rating: 4.6,
-      features: ["Pin 350km", "SUV cao cấp", "5 chỗ ngồi"],
-      isPopular: false,
-      description: "VinFast VF7 là mẫu SUV điện cao cấp với thiết kế sang trọng và công nghệ tiên tiến. Xe được trang bị nhiều tính năng thông minh và an toàn.",
-      specifications: {
-        battery: "Pin Lithium-ion 75 kWh",
-        range: "350km (WLTP)",
-        charging: "Sạc nhanh DC 120kW",
-        seats: "5 chỗ ngồi",
-        topSpeed: "180 km/h",
-        acceleration: "0-100 km/h trong 6.5 giây"
-      },
-      highlights: [
-        "Thiết kế SUV cao cấp",
-        "Công nghệ thông minh",
-        "Hệ thống an toàn toàn diện",
-        "Nội thất sang trọng",
-        "Hiệu suất vượt trội"
-      ],
-      colors: [
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xanh lá",
-          hex: "#10b981",
-          available: true
-        },
-        {
-          name: "Đen",
-          hex: "#1a1a1a",
-          available: true
-        },
-        {
-          name: "Xám",
-          hex: "#6b7280",
-          available: false
-        }
-      ],
-      rentalInfo: {
-        deposit: "4,000,000 VNĐ",
-        insurance: "Bảo hiểm toàn diện",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 6,
-      name: "VinFast VF3",
-      type: "Ô tô điện",
-      images: [
-        "/images/4 wheelers/VF/VF3/vinfast-vf3-logo.jpg",
-        "/images/4 wheelers/VF/VF3/vinfast-vf-3-mau-xe-hong.png",
-        "/images/4 wheelers/VF/VF3/vinfast-vf-3-mau-xe-xanh-trang.png"
-      ],
-      price: "800,000 VNĐ/ngày",
-      rating: 4.3,
-      features: ["Pin 200km", "Thiết kế nhỏ gọn", "4 chỗ ngồi"],
-      isPopular: false,
-      description: "VinFast VF3 là mẫu xe điện nhỏ gọn với thiết kế hiện đại và giá cả hợp lý. Xe phù hợp cho việc di chuyển trong thành phố.",
-      specifications: {
-        battery: "Pin Lithium-ion 30 kWh",
-        range: "200km (WLTP)",
-        charging: "Sạc nhanh DC 40kW",
-        seats: "4 chỗ ngồi",
-        topSpeed: "120 km/h",
-        acceleration: "0-100 km/h trong 10 giây"
-      },
-      highlights: [
-        "Thiết kế nhỏ gọn, dễ điều khiển",
-        "Giá cả hợp lý",
-        "Tiết kiệm năng lượng",
-        "Phù hợp di chuyển thành phố",
-        "Công nghệ cơ bản"
-      ],
-      colors: [
-        {
-          name: "Hồng",
-          hex: "#ec4899",
-          available: true
-        },
-        {
-          name: "Xanh trắng",
-          hex: "#e0f2fe",
-          available: true
-        },
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xanh dương",
-          hex: "#3b82f6",
-          available: false
-        }
-      ],
-      rentalInfo: {
-        deposit: "1,600,000 VNĐ",
-        insurance: "Bảo hiểm cơ bản",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    // 2 wheelers
-    {
-      id: 7,
-      name: "VinFast Klara S",
-      type: "Xe máy điện cao cấp",
-      images: [
-        "/images/2 wheelers/Mid-end/Klara/img-top-klaras-white-sp.png",
-        "/images/2 wheelers/Mid-end/Klara/img-top-klaras-blue.png",
-        "/images/2 wheelers/Mid-end/Klara/img-top-klaras-green.png"
-      ],
-      price: "150,000 VNĐ/ngày",
-      rating: 4.7,
-      features: ["Pin 80km", "Tốc độ 50km/h", "Thiết kế hiện đại"],
-      isPopular: true,
-      description: "VinFast Klara S là mẫu xe máy điện cao cấp với thiết kế hiện đại và công nghệ tiên tiến. Xe được trang bị pin lithium-ion cho phép di chuyển lên đến 80km với một lần sạc.",
-      specifications: {
-        battery: "Pin Lithium-ion 2.3 kWh",
-        range: "80km (WLTP)",
-        charging: "Sạc nhanh 2.5 giờ",
-        seats: "2 chỗ ngồi",
-        topSpeed: "50 km/h",
-        acceleration: "0-50 km/h trong 8 giây"
-      },
-      highlights: [
-        "Thiết kế hiện đại và sang trọng",
-        "Công nghệ pin tiên tiến",
-        "Hệ thống an toàn thông minh",
-        "Tiết kiệm năng lượng",
-        "Phù hợp di chuyển thành phố"
-      ],
-      colors: [
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xanh dương",
-          hex: "#3b82f6",
-          available: true
-        },
-        {
-          name: "Xanh lá",
-          hex: "#10b981",
-          available: true
-        }
-      ],
-      rentalInfo: {
-        deposit: "300,000 VNĐ",
-        insurance: "Bảo hiểm cơ bản",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 8,
-      name: "VinFast Theon S",
-      type: "Xe máy điện thể thao",
-      images: [
-        "/images/2 wheelers/High-end/Theon S/theons-white.png",
-        "/images/2 wheelers/High-end/Theon S/theons-red.png",
-        "/images/2 wheelers/High-end/Theon S/theons-black-sp.png",        "/images/2 wheelers/High-end/Theon S/theons-white.png",
-        "/images/2 wheelers/High-end/Theon S/theons-red.png",
-        "/images/2 wheelers/High-end/Theon S/theons-black-sp.png"
-      ],
-      price: "120,000 VNĐ/ngày",
-      rating: 4.5,
-      features: ["Pin 70km", "Tốc độ 45km/h", "Thiết kế thể thao"],
-      isPopular: false,
-      description: "VinFast Theon S là mẫu xe máy điện thể thao với thiết kế năng động và hiệu suất cao. Xe phù hợp cho những người yêu thích phong cách thể thao.",
-      specifications: {
-        battery: "Pin Lithium-ion 2.0 kWh",
-        range: "70km (WLTP)",
-        charging: "Sạc nhanh 2 giờ",
-        seats: "2 chỗ ngồi",
-        topSpeed: "45 km/h",
-        acceleration: "0-45 km/h trong 6 giây"
-      },
-      highlights: [
-        "Thiết kế thể thao năng động",
-        "Hiệu suất cao",
-        "Phù hợp người trẻ",
-        "Tiết kiệm năng lượng",
-        "Giá cả hợp lý"
-      ],
-      colors: [
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Đỏ",
-          hex: "#dc2626",
-          available: true
-        },
-        {
-          name: "Đen",
-          hex: "#1a1a1a",
-          available: true
-        }
-      ],
-      rentalInfo: {
-        deposit: "240,000 VNĐ",
-        insurance: "Bảo hiểm cơ bản",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
-    },
-    {
-      id: 9,
-      name: "VinFast Feliz S",
-      type: "Xe máy điện cao cấp",
-      images: [
-        "/images/2 wheelers/Mid-end/Feliz/img-top-felizs-white.png",
-        "/images/2 wheelers/Mid-end/Feliz/img-top-felizs-green.png",
-        "/images/2 wheelers/Mid-end/Feliz/img-top-felizs-red.png"
-      ],
-      price: "180,000 VNĐ/ngày",
-      rating: 4.8,
-      features: ["Pin 90km", "Tốc độ 55km/h", "Thiết kế sang trọng"],
-      isPopular: true,
-      description: "VinFast Feliz S là mẫu xe máy điện cao cấp với thiết kế sang trọng và công nghệ tiên tiến. Xe được trang bị nhiều tính năng thông minh.",
-      specifications: {
-        battery: "Pin Lithium-ion 2.5 kWh",
-        range: "90km (WLTP)",
-        charging: "Sạc nhanh 2 giờ",
-        seats: "2 chỗ ngồi",
-        topSpeed: "55 km/h",
-        acceleration: "0-55 km/h trong 7 giây"
-      },
-      highlights: [
-        "Thiết kế sang trọng cao cấp",
-        "Công nghệ thông minh",
-        "Hiệu suất cao",
-        "Tiện nghi đầy đủ",
-        "Phù hợp mọi lứa tuổi"
-      ],
-      colors: [
-        {
-          name: "Trắng",
-          hex: "#ffffff",
-          available: true
-        },
-        {
-          name: "Xanh lá",
-          hex: "#10b981",
-          available: true
-        },
-        {
-          name: "Đỏ",
-          hex: "#dc2626",
-          available: true
-        }
-      ],
-      rentalInfo: {
-        deposit: "360,000 VNĐ",
-        insurance: "Bảo hiểm toàn diện",
-        delivery: "Giao xe tận nơi miễn phí",
-        cancellation: "Hủy miễn phí trước 24h"
-      }
+  // Prevent body scroll when any modal is open
+  useEffect(() => {
+    if (showGallery || showDocumentsModal || showCollateralModal) {
+      const scrollbarWidth = window.innerWidth - document.documentElement.clientWidth;
+      document.querySelector("html")!.style.overflow = "hidden";
+      document.querySelector("html")!.style.paddingRight = `${scrollbarWidth}px`;
+    } else {
+      document.querySelector("html")!.style.overflow = "";
+      document.querySelector("html")!.style.paddingRight = "";
     }
-  ];
+  }, [showGallery, showDocumentsModal, showCollateralModal]);
 
-  const vehicle = allVehicles.find(v => v.id === vehicleId) || allVehicles[0];
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      document.querySelector("html")!.style.overflow = "";
+      document.querySelector("html")!.style.paddingRight = "";
+    };
+  }, []);
+
+  // Fetch vehicle and station data from API
+  React.useEffect(() => {
+    const fetchData = async () => {
+      try {
+        const [vehicleData, stationData] = await Promise.all([
+          carService.getCarById(vehicleId),
+          carService.getCarById(vehicleId).then(car => 
+            car ? stationService.getStationById(car.stationId) : null
+          )
+        ]);
+        
+        if (vehicleData) {
+          setVehicle(vehicleData);
+          
+          // Fetch car files for images
+          try {
+            const files = await carService.getCarFiles(vehicleData.id);
+            const imageUrls = files.map(file => carService.getImageUrl(file.directus_files_id));
+            setCarFiles(imageUrls);
+          } catch (error) {
+            console.error('Error fetching car files:', error);
+            setCarFiles([]);
+          }
+        }
+        
+        if (stationData) {
+          setStation(stationData);
+        }
+      } catch (error) {
+        console.error('Error fetching data:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    
+    fetchData();
+  }, [vehicleId]);
+
+  React.useEffect(() => {
+    if (dateRange && dateRange[0] && dateRange[1]) {
+      const start = dateRange[0];
+      const end = dateRange[1];
+      const diffDays = end.diff(start, 'day') + 1;
+      setTotalDays(diffDays);
+      
+      const pricePerDay = vehicle?.price || 0;
+      setTotalPrice(pricePerDay * diffDays);
+    }
+  }, [dateRange, vehicle?.price]);
+
+  const openGallery = () => {
+    setShowGallery(true);
+    setCurrentGalleryIndex(0);
+  };
+
+  const closeGallery = () => {
+    setShowGallery(false);
+  };
 
   const nextImage = () => {
-    setCurrentImageIndex((prev) => (prev + 1) % vehicle.images.length);
+    if (carFiles.length > 0) {
+      setCurrentGalleryIndex((prev) => (prev + 1) % carFiles.length);
+    }
   };
 
   const prevImage = () => {
-    setCurrentImageIndex((prev) => (prev - 1 + vehicle.images.length) % vehicle.images.length);
+    if (carFiles.length > 0) {
+      setCurrentGalleryIndex((prev) => (prev - 1 + carFiles.length) % carFiles.length);
+    }
   };
 
   const goToImage = (index: number) => {
-    setCurrentImageIndex(index);
+    setCurrentGalleryIndex(index);
   };
+
+  if (loading) {
+    return (
+      <div className={styles.detailVehicle}>
+        <div className={styles.container}>
+          <div className={styles.loading}>
+            <div className={styles.loadingSpinner}></div>
+            <p>Đang tải thông tin xe...</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!vehicle) {
+    return (
+      <div className={styles.detailVehicle}>
+        <div className={styles.container}>
+          <div className={styles.error}>
+            <p>Không tìm thấy thông tin xe</p>
+          </div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.detailVehicle}>
@@ -592,250 +152,590 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
         {/* Header */}
         <div className={styles.header}>
           <div className={styles.breadcrumb}>
-            <span>Trang chủ</span>
-            <span>Xe 4 bánh</span>
-            <span>{vehicle.name}</span>
+            <Link href="/" className={styles.breadcrumbLink}>Trang chủ</Link>
+            <span className={styles.breadcrumbSeparator}>/</span>
+            <Link 
+              href={vehicle.type === "Ô tô điện" ? "/vehicles?type=electric-car" : "/vehicles?type=electric-motorcycle"} 
+              className={styles.breadcrumbLink}
+            >
+              {vehicle.type}
+            </Link>
+            <span className={styles.breadcrumbSeparator}>/</span>
+            <span className={styles.breadcrumbCurrent}>{vehicle.name}</span>
           </div>
         </div>
 
-        {/* Main Content */}
-        <div className={styles.mainContent}>
           {/* Image Gallery */}
           <div className={styles.imageGallery}>
             <div className={styles.mainImage}>
               <img 
-                src={vehicle.images[currentImageIndex]} 
+                src={carFiles[0] || '/images/car.png'} 
                 alt={vehicle.name}
               />
-              <button className={styles.navButton} onClick={prevImage}>
-                <LeftOutlined />
-              </button>
-              <button className={styles.navButton} onClick={nextImage}>
-                <RightOutlined />
-              </button>
-              <div className={styles.imageCounter}>
-                {currentImageIndex + 1} / {vehicle.images.length}
-              </div>
             </div>
             
-            <div className={styles.thumbnailContainer}>
-              <div className={styles.thumbnailGrid}>
-                {vehicle.images.map((image, index) => (
+          <div className={styles.sideImages}>
+            {carFiles.slice(1, 4).map((image, index) => (
+              <div key={index} className={styles.sideImage}>
+                <img src={image} alt={`${vehicle.name} ${index + 2}`} />
+                {index === 2 && carFiles.length > 4 && (
+                  <div className={styles.viewAllOverlay} onClick={openGallery}>
+                    <PictureOutlined />
+                    <span>Xem tất cả ảnh</span>
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </div>
+
+
+        {/* Booking Section */}
+        <div className={styles.bookingSection}>
+          <div className={styles.bookingContent}>
+          {/* Vehicle Info */}
+            <div className={styles.vehicleDetails}>
+              <div className={styles.vehicleHeader}>
+                <h2 className={styles.vehicleTitle}>{vehicle.name}</h2>
+                <div className={styles.availabilityInfo}>
+                  <CarOutlined />
+                  <span>Số lượng còn lại: {vehicle.availableCount} xe</span>
+              </div>
+            </div>
+
+              <div className={styles.vehicleLocation}>
+                <div className={styles.locationInfo}>
+                  <EnvironmentOutlined />
+                  <span>Địa điểm: {station?.address || 'Địa chỉ không xác định'}</span>
+                </div>
+                <div className={styles.rating}>
+                  <StarOutlined />
+                  <span>{vehicle.rating}</span>
+              </div>
+            </div>
+
+              <div className={styles.vehicleDescription}>
+                  <p>{vehicle.description}</p>
+                </div>
+                
+              <div className={styles.vehicleSpecs}>
+                <h3>Thông số kỹ thuật</h3>
+                <div className={styles.specsGrid}>
+                  <div className={styles.specItem}>
+                    <EnvironmentOutlined />
+                    <div className={styles.specContent}>
+                      <span className={styles.specLabel}>Pin</span>
+                      <span className={styles.specValue}>{vehicle.battery}</span>
+                    </div>
+                  </div>
+                  <div className={styles.specItem}>
+                    <CarOutlined />
+                    <div className={styles.specContent}>
+                      <span className={styles.specLabel}>Tầm hoạt động</span>
+                      <span className={styles.specValue}>{vehicle.range}</span>
+                    </div>
+                  </div>
+                  <div className={styles.specItem}>
+                    <ClockCircleOutlined />
+                    <div className={styles.specContent}>
+                      <span className={styles.specLabel}>Sạc</span>
+                      <span className={styles.specValue}>{vehicle.charging}</span>
+                    </div>
+                  </div>
+                  <div className={styles.specItem}>
+                    <SafetyOutlined />
+                    <div className={styles.specContent}>
+                      <span className={styles.specLabel}>Số chỗ ngồi</span>
+                      <span className={styles.specValue}>{vehicle.seats}</span>
+                    </div>
+                  </div>
+                  <div className={styles.specItem}>
+                    <ThunderboltOutlined />
+                    <div className={styles.specContent}>
+                      <span className={styles.specLabel}>Tốc độ tối đa</span>
+                      <span className={styles.specValue}>{vehicle.topSpeed}</span>
+                    </div>
+                  </div>
+                  <div className={styles.specItem}>
+                    <StarOutlined />
+                    <div className={styles.specContent}>
+                      <span className={styles.specLabel}>Tăng tốc</span>
+                      <span className={styles.specValue}>{vehicle.acceleration}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.vehicleHighlights}>
+                <h3>Điểm nổi bật</h3>
+                <div className={styles.highlightList}>
+                  {vehicle.highlights.map((highlight, index) => (
+                    <div key={index} className={styles.highlightItem}>
+                      <svg aria-hidden="true" role="img" focusable="false" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" style={{color: '#2FA71D'}}>
+                        <path d="M9.71278 3.64026C10.2941 3.14489 10.5847 2.8972 10.8886 2.75195C11.5915 2.41602 12.4085 2.41602 13.1114 2.75195C13.4153 2.8972 13.7059 3.14489 14.2872 3.64026C14.8856 4.15023 15.4938 4.40761 16.2939 4.47146C17.0552 4.53222 17.4359 4.56259 17.7535 4.67477C18.488 4.93421 19.0658 5.51198 19.3252 6.24652C19.4374 6.5641 19.4678 6.94476 19.5285 7.70608C19.5924 8.50621 19.8498 9.11436 20.3597 9.71278C20.8551 10.2941 21.1028 10.5847 21.248 10.8886C21.584 11.5915 21.584 12.4085 21.248 13.1114C21.1028 13.4153 20.8551 13.7059 20.3597 14.2872C19.8391 14.8981 19.5911 15.5102 19.5285 16.2939C19.4678 17.0552 19.4374 17.4359 19.3252 17.7535C19.0658 18.488 18.488 19.0658 17.7535 19.3252C17.4359 19.4374 17.0552 19.4678 16.2939 19.5285C15.4938 19.5924 14.8856 19.8498 14.2872 20.3597C13.7059 20.8551 13.4153 21.1028 13.1114 21.248C12.4085 21.584 11.5915 21.584 10.8886 21.248C10.5847 21.1028 10.2941 20.8551 9.71278 20.3597C9.10185 19.8391 8.48984 19.5911 7.70608 19.5285C6.94476 19.4678 6.5641 19.4374 6.24652 19.3252C5.51198 19.0658 4.93421 18.488 4.67477 17.7535C4.56259 17.4359 4.53222 17.0552 4.47146 16.2939C4.40761 15.4938 4.15023 14.8856 3.64026 14.2872C3.14489 13.7059 2.8972 13.4153 2.75195 13.1114C2.41602 12.4085 2.41602 11.5915 2.75195 10.8886C2.8972 10.5847 3.14489 10.2941 3.64026 9.71278C4.16089 9.10185 4.40892 8.48984 4.47146 7.70608C4.53222 6.94476 4.56259 6.5641 4.67477 6.24652C4.93421 5.51198 5.51198 4.93421 6.24652 4.67477C6.5641 4.56259 6.94476 4.53222 7.70608 4.47146C8.50621 4.40761 9.11436 4.15023 9.71278 3.64026Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                        <path d="M8.66602 12.6334L10.1718 14.3543C10.5952 14.8382 11.3587 14.8025 11.7351 14.2813L15.3327 9.30005" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                      </svg>
+                      <span>{highlight}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.vehicleFeatures}>
+                <h3>Tiện ích</h3>
+                <div className={styles.featureGrid}>
+                  {vehicle.features.map((feature, index) => (
+                    <div key={index} className={styles.featureItem}>
+                      <CheckOutlined />
+                      <span>{feature}</span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              <div className={styles.vehicleDocuments}>
+                <div className={styles.sectionHeader}>
+                  <h3>Giấy tờ thuê xe</h3>
+                  <span 
+                    className={styles.questionIcon}
+                    onClick={() => setShowDocumentsModal(true)}
+                  >?</span>
+                </div>
+                <div className={styles.documentsContent}>
+                  <div className={styles.documentsInfo}>
+                    <span className={styles.infoIcon}>!</span>
+                    <span>Chọn 1 trong 2 hình thức</span>
+                  </div>
+                  <div className={styles.documentsOptions}>
+                    <div className={styles.documentOption}>
+                      <div className={styles.documentIcon}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <path d="M14 2H6C4.9 2 4 2.9 4 4V20C4 21.1 4.89 22 6 22H18C19.1 22 20 21.1 20 20V8L14 2Z" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M14 2V8H20" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M16 13H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M16 17H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                          <path d="M10 9H8" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"/>
+                        </svg>
+                      </div>
+                      <span>GPLX (đối chiếu) & Passport (giữ lại)</span>
+                    </div>
+                    <div className={styles.documentOption}>
+                      <div className={styles.documentIcon}>
+                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                          <rect x="3" y="4" width="18" height="16" rx="2" stroke="currentColor" strokeWidth="2"/>
+                          <path d="M7 8H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M7 12H17" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                          <path d="M7 16H13" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+                        </svg>
+                      </div>
+                      <span>GPLX (đối chiếu) & CCCD (đối chiếu VNeID)</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.vehicleCollateral}>
+                <div className={styles.sectionHeader}>
+                  <h3>Tài sản thế chấp</h3>
+                  <span 
+                    className={styles.questionIcon}
+                    onClick={() => setShowCollateralModal(true)}
+                  >?</span>
+                </div>
+                <div className={styles.collateralContent}>
+                  <div className={styles.collateralInfo}>
+                    <span className={styles.infoIcon}>!</span>
+                    <span>Không yêu cầu khách thuê thế chấp Tiền mặt hoặc Xe máy</span>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.vehicleCancellationPolicy}>
+                <h3>Chính sách hủy chuyến</h3>
+                <div className={styles.policyTable}>
+                  <div className={styles.tableHeader}>
+                    <div className={styles.headerCell}>Thời điểm hủy chuyến</div>
+                    <div className={styles.headerCell}>Phí hủy chuyến</div>
+                  </div>
+                  <div className={styles.tableRow}>
+                    <div className={styles.tableCell}>Hủy trong 1 giờ đầu sau khi đặt xe</div>
+                    <div className={styles.tableCell}>
+                      <CheckOutlined style={{ color: '#2FA71D', fontSize: '16px' }} />
+                      <span className={styles.freeText}>Hoàn tiền 100%</span>
+                    </div>
+                  </div>
+                  <div className={styles.tableRow}>
+                    <div className={styles.tableCell}>
+                      Hủy trước 7 ngày (sau 1 giờ đầu)<br />
+                      <span className={styles.subText}>Ví dụ: Đặt ngày 15, hủy trước ngày 8</span>
+                    </div>
+                    <div className={styles.tableCell}>
+                      <CheckOutlined style={{ color: '#2FA71D', fontSize: '16px' }} />
+                      <span>Phí hủy 10%</span>
+                    </div>
+                  </div>
+                  <div className={styles.tableRow}>
+                    <div className={styles.tableCell}>
+                      Hủy trong 7 ngày cuối<br />
+                      <span className={styles.subText}>Ví dụ: Đặt ngày 15, hủy từ ngày 8 trở đi</span>
+                    </div>
+                    <div className={styles.tableCell}>
+                      <CloseOutlined style={{ color: '#dc3545', fontSize: '16px' }} />
+                      <span>Phí hủy 40%</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div className={styles.refundInfo}>
+                  <div className={styles.refundProcedure}>
+                    <h4>Thủ tục hoàn tiền</h4>
+                    <p>EVS Rent sẽ hoàn lại tiền thuê xe theo chính sách hủy chuyến qua tài khoản ngân hàng của khách thuê trong vòng 1-3 ngày làm việc kể từ thời điểm hủy chuyến.</p>
+                    <p><strong>*Nhân viên EVS Rent sẽ liên hệ khách thuê (qua số điện thoại đã đăng ký) để xin thông tin tài khoản ngân hàng, hoặc Khách thuê có thể chủ động gửi thông tin cho EVS Rent qua email contact@evsrent.vn hoặc nhắn tin tại EVS Rent Fanpage</strong></p>
+                  </div>
+                </div>
+              </div>
+
+              <div className={styles.vehicleTerms}>
+                <h3>Điều khoản</h3>
+                <div className={styles.termsContent}>
+                  <div className={styles.termsSection}>
+                    <ul className={styles.termsList}>
+                      <li>Sử dụng xe đúng mục đích.</li>
+                      <li>Không sử dụng xe thuê vào mục đích phi pháp, trái pháp luật.</li>
+                      <li>Không sử dụng xe thuê để cầm cố, thế chấp.</li>
+                      <li>Không hút thuốc, nhả kẹo cao su, xả rác trong xe.</li>
+                      <li>Không chở hoa quả, thực phẩm nặng mùi trong xe.</li>
+                      <li>Khi trả xe, nếu xe bẩn hoặc có mùi trong xe, khách hàng vui lòng vệ sinh xe sạch sẽ hoặc gửi phụ thu phí vệ sinh xe.</li>
+                    </ul>
+                  </div>
+                </div>
+              </div>
+
+              {/* Contact Information */}
+              <div className={styles.contactSection}>
+                <h3 className={styles.contactTitle}>Thông tin liên hệ</h3>
+                <div className={styles.contactInfo}>
+                  <div className={styles.contactItem}>
+                    <div className={styles.contactLabel}>Trạm thuê xe:</div>
+                    <div className={styles.contactValue}>{station?.name || 'Không xác định'}</div>
+                  </div>
+                  <div className={styles.contactItem}>
+                    <div className={styles.contactLabel}>Địa chỉ:</div>
+                    <div className={styles.contactValue}>{station?.address || 'Không xác định'}</div>
+                  </div>
+                  <div className={styles.contactItem}>
+                    <div className={styles.contactLabel}>Số điện thoại:</div>
+                    <div className={styles.contactValue}>
+                      <a href={`tel:${station?.phone}`} className={styles.contactLink}>
+                        {station?.phone || 'Không xác định'}
+                      </a>
+                    </div>
+                  </div>
+                  <div className={styles.contactItem}>
+                    <div className={styles.contactLabel}>Email:</div>
+                    <div className={styles.contactValue}>
+                      <a href={`mailto:${station?.email}`} className={styles.contactLink}>
+                        {station?.email || 'Không xác định'}
+                      </a>
+                    </div>
+                  </div>
+                  <div className={styles.contactItem}>
+                    <div className={styles.contactLabel}>Quản lý:</div>
+                    <div className={styles.contactValue}>{station?.manager || 'Không xác định'}</div>
+                  </div>
+                  <div className={styles.contactItem}>
+                    <div className={styles.contactLabel}>Giờ mở cửa:</div>
+                    <div className={styles.contactValue}>{station?.openingHours || 'Không xác định'}</div>
+                  </div>
+                </div>
+              </div>
+              
+              <div className={styles.thankYouMessage}>
+                <p>Trân trọng cảm ơn, chúc quý khách hàng có những chuyến đi tuyệt vời!</p>
+              </div>
+
+            </div>
+
+            {/* Booking Form */}
+            <div className={styles.bookingForm}>
+              {/* Card 1: Booking */}
+              <div className={styles.bookingCard}>
+                <h3>{vehicle.price.toLocaleString()} VNĐ/ngày</h3>
+                <div className={styles.dateSelection}>
+                  <div className={styles.dateInput}>
+                    <label>Thời gian thuê</label>
+                    <DatePicker.RangePicker
+                      showTime={{ format: 'HH:mm' }}
+                      format="DD/MM/YYYY HH:mm"
+                      placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+                      value={dateRange}
+                      onChange={setDateRange}
+                      disabledDate={(current) => current && current < dayjs().startOf('day')}
+                      style={{ width: '100%', height: '48px' }}
+                    />
+                  </div>
+                </div>
+
+                <div className={styles.priceInfo}>
+                  <div className={styles.priceRow}>
+                    <span>Số ngày:</span>
+                    <span>{totalDays} ngày</span>
+                  </div>
+                  <div className={styles.totalPrice}>
+                    <span>Tổng cộng:</span>
+                    <span>{totalPrice.toLocaleString('vi-VN')} VNĐ</span>
+                  </div>
+                </div>
+
+                <div className={styles.bookingActions}>
+                  <button className={styles.rentButton}>
+                    Thuê ngay
+                  </button>
+                </div>
+              </div>
+
+              {/* Card 2: Additional Fees */}
+              <div className={styles.additionalFeesCard}>
+                <h3>Phụ phí có thể phát sinh</h3>
+                <div className={styles.feesList}>
+                  {vehicle.type === "Ô tô điện" ? (
+                    // Phụ phí cho xe ô tô
+                    <>
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí vượt giới hạn</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh nếu lộ trình di chuyển vượt quá 350km khi thuê xe 1 ngày</p>
+                        </div>
+                        <div className={styles.feePrice}>2.000₫/km</div>
+                      </div>
+
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí quá giờ</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh nếu hoàn trả xe trễ giờ. Trường hợp trễ quá 7 giờ, phụ phí thêm 1 ngày thuê</p>
+                        </div>
+                        <div className={styles.feePrice}>50.000₫/giờ</div>
+                      </div>
+
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí vệ sinh</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh khi xe hoàn trả không đảm bảo vệ sinh (nhiều vết bẩn, bùn cát, sình lầy...)</p>
+                        </div>
+                        <div className={styles.feePrice}>70.000₫</div>
+                      </div>
+
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí khử mùi</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh khi xe hoàn trả bị ám mùi khó chịu (mùi thuốc lá, thực phẩm nặng mùi...)</p>
+                        </div>
+                        <div className={styles.feePrice}>230.000₫</div>
+                      </div>
+                    </>
+                  ) : (
+                    // Phụ phí cho xe máy
+                    <>
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí sạc pin</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí sạc pin cho xe máy điện theo thực tế sử dụng</p>
+                        </div>
+                        <div className={styles.feePrice}>1.500₫ /1% pin</div>
+                      </div>
+
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí quá giờ</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh nếu hoàn trả xe trễ giờ</p>
+                        </div>
+                        <div className={styles.feePrice}>20.000₫/giờ</div>
+                      </div>
+
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí vệ sinh</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh khi xe hoàn trả không đảm bảo vệ sinh</p>
+                        </div>
+                        <div className={styles.feePrice}>30.000₫</div>
+                      </div>
+                    </>
+                  )}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Gallery Modal */}
+      {showGallery && (
+        <div className={styles.galleryModal} onClick={closeGallery}>
+          <div className={styles.galleryContent} onClick={(e) => e.stopPropagation()}>
+            {/* Header */}
+            <div className={styles.galleryHeader}>
+              <div className={styles.galleryCounter}>
+                {currentGalleryIndex + 1} / {carFiles.length}
+              </div>
+              <button className={styles.closeButton} onClick={closeGallery}>
+                <CloseOutlined />
+              </button>
+            </div>
+
+            {/* Main Image */}
+            <div className={styles.galleryMainImage}>
+              <img 
+                src={carFiles[currentGalleryIndex] || '/images/car.png'} 
+                alt={`${vehicle.name} ${currentGalleryIndex + 1}`}
+              />
+              <button className={styles.galleryNavButton} onClick={prevImage}>
+                <LeftOutlined />
+              </button>
+              <button className={styles.galleryNavButton} onClick={nextImage}>
+                <RightOutlined />
+              </button>
+            </div>
+
+            {/* Thumbnail Strip */}
+            <div className={styles.galleryThumbnails}>
+              <button className={styles.thumbNavButton}>
+                <LeftOutlined />
+              </button>
+              <div className={styles.thumbnailStrip}>
+                {carFiles.map((image, index) => (
                   <div 
                     key={index}
-                    className={`${styles.thumbnail} ${currentImageIndex === index ? styles.active : ''}`}
+                    className={`${styles.galleryThumbnail} ${currentGalleryIndex === index ? styles.active : ''}`}
                     onClick={() => goToImage(index)}
                   >
                     <img src={image} alt={`${vehicle.name} ${index + 1}`} />
                   </div>
                 ))}
               </div>
+              <button className={styles.thumbNavButton}>
+                <RightOutlined />
+              </button>
             </div>
+
           </div>
+        </div>
+      )}
 
-          {/* Vehicle Info */}
-          <div className={styles.vehicleInfo}>
-            <div className={styles.titleSection}>
-              <h1 className={styles.vehicleName}>{vehicle.name}</h1>
-              <div className={styles.typeRatingRow}>
-                <div className={styles.vehicleType}>
-                  {vehicle.type === "Ô tô điện" ? <CarOutlined /> : <ThunderboltOutlined />}
-                  <span>{vehicle.type}</span>
-                </div>
-                <div className={styles.rating}>
-                  <StarOutlined />
-                  <span>{vehicle.rating}</span>
-                  <span className={styles.ratingText}>(4.8/5 từ 156 đánh giá)</span>
-                </div>
-              </div>
-            </div>
-
-            <div className={styles.priceSection}>
-              <div className={styles.price}>
-                <DollarOutlined />
-                <span>{vehicle.price}</span>
-              </div>
-              <div className={styles.priceNote}>Giá đã bao gồm thuế và phí</div>
-            </div>
-
-            <div className={styles.features}>
-              <h3>Đặc điểm nổi bật</h3>
-              <div className={styles.featureList}>
-                {vehicle.features.map((feature, index) => (
-                  <div key={index} className={styles.featureItem}>
-                    <CheckOutlined />
-                    <span>{feature}</span>
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.colorSelection}>
-              <h3>Màu sắc xe</h3>
-              <div className={styles.colorList}>
-                {vehicle.colors.map((color, index) => (
-                  <div 
-                    key={index} 
-                    className={`${styles.colorOption} ${selectedColor === index ? styles.selected : ''} ${!color.available ? styles.unavailable : ''}`}
-                    onClick={() => color.available && setSelectedColor(index)}
-                  >
-                    <div 
-                      className={styles.colorSwatch}
-                      style={{ backgroundColor: color.hex }}
-                    />
-                    <span className={styles.colorName}>{color.name}</span>
-                    {!color.available && (
-                      <span className={styles.unavailableText}>Hết hàng</span>
-                    )}
-                  </div>
-                ))}
-              </div>
-            </div>
-
-            <div className={styles.actionButtons}>
-              <button className={styles.rentButton}>
-                Thuê ngay
+      {/* Documents Modal */}
+      {showDocumentsModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowDocumentsModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Giấy tờ thuê xe</h3>
+              <button 
+                className={styles.closeButton}
+                onClick={() => setShowDocumentsModal(false)}
+              >
+                <CloseOutlined />
               </button>
-              <button className={styles.contactButton}>
-                Liên hệ tư vấn
-              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.documentSection}>
+                <h4>Bạn đã có CCCD gắn chip</h4>
+                <p>Giấy tờ thuê xe bao gồm:</p>
+                <ul>
+                  <li>Giấy phép lái xe (nhân viên EVS Rent đối chiếu bản gốc với thông tin GPLX đã xác thực trên app & gửi lại bạn);</li>
+                  <li>CCCD gắn chip (nhân viên EVS Rent đối chiếu bản gốc với thông tin cá nhân trên VNeID & gửi lại bạn)</li>
+                </ul>
+              </div>
+
+              <div className={styles.documentSection}>
+                <h4>Bạn chưa có CCCD gắn chip</h4>
+                <p>Giấy tờ thuê xe bao gồm:</p>
+                <ul>
+                  <li>Giấy phép lái xe (nhân viên EVS Rent đối chiếu bản gốc với thông tin GPLX đã xác thực trên app & gửi lại bạn);</li>
+                  <li>Passport (nhân viên EVS Rent kiểm tra bản gốc, giữ lại và hoàn trả khi bạn trả xe)</li>
+                </ul>
+              </div>
+
+              <div className={styles.noteSection}>
+                <p><strong>Lưu ý:</strong> Khách thuê vui lòng chuẩn bị đầy đủ BẢN GỐC tất cả giấy tờ thuê xe khi làm thủ tục nhận xe.</p>
+              </div>
             </div>
           </div>
         </div>
+      )}
 
-        {/* Tabs */}
-        <div className={styles.tabsContainer}>
-          <div className={styles.tabs}>
-            <button 
-              className={`${styles.tab} ${activeTab === 'overview' ? styles.active : ''}`}
-              onClick={() => setActiveTab('overview')}
-            >
-              Tổng quan
-            </button>
-            <button 
-              className={`${styles.tab} ${activeTab === 'specs' ? styles.active : ''}`}
-              onClick={() => setActiveTab('specs')}
-            >
-              Thông số kỹ thuật
-            </button>
-            <button 
-              className={`${styles.tab} ${activeTab === 'rental' ? styles.active : ''}`}
-              onClick={() => setActiveTab('rental')}
-            >
-              Thông tin thuê
-            </button>
-          </div>
-
-          <div className={styles.tabContent}>
-            {activeTab === 'overview' && (
-              <div className={styles.overview}>
-                <div className={styles.description}>
-                  <h3>Mô tả</h3>
-                  <p>{vehicle.description}</p>
-                </div>
+      {/* Collateral Modal */}
+      {showCollateralModal && (
+        <div className={styles.modalOverlay} onClick={() => setShowCollateralModal(false)}>
+          <div className={styles.modalContent} onClick={(e) => e.stopPropagation()}>
+            <div className={styles.modalHeader}>
+              <h3>Tài sản thế chấp</h3>
+              <button 
+                className={styles.closeButton}
+                onClick={() => setShowCollateralModal(false)}
+              >
+                <CloseOutlined />
+              </button>
+            </div>
+            
+            <div className={styles.modalBody}>
+              <div className={styles.collateralSection}>
+                <h4>Chính sách thế chấp của EVS Rent</h4>
+                <p>EVS Rent cam kết mang đến trải nghiệm thuê xe thuận tiện và an toàn cho khách hàng:</p>
                 
-                <div className={styles.highlights}>
-                  <h3>Điểm nổi bật</h3>
-                  <div className={styles.highlightList}>
-                    {vehicle.highlights.map((highlight, index) => (
-                      <div key={index} className={styles.highlightItem}>
-                        <CheckOutlined />
-                        <span>{highlight}</span>
-                      </div>
-                    ))}
+                <div className={styles.benefitList}>
+                  <div className={styles.benefitItem}>
+                    <div className={styles.benefitIcon}>✓</div>
+                    <div className={styles.benefitText}>
+                      <strong>Không yêu cầu thế chấp tiền mặt</strong>
+                      <p>Khách hàng không cần đặt cọc tiền mặt khi thuê xe</p>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.benefitItem}>
+                    <div className={styles.benefitIcon}>✓</div>
+                    <div className={styles.benefitText}>
+                      <strong>Không yêu cầu thế chấp xe máy</strong>
+                      <p>Không cần để lại xe máy cá nhân làm tài sản thế chấp</p>
+                    </div>
+                  </div>
+                  
+                  <div className={styles.benefitItem}>
+                    <div className={styles.benefitIcon}>✓</div>
+                    <div className={styles.benefitText}>
+                      <strong>Chỉ cần giấy tờ tùy thân</strong>
+                      <p>Chỉ cần xuất trình giấy phép lái xe và CCCD/Passport</p>
+                    </div>
                   </div>
                 </div>
-              </div>
-            )}
 
-            {activeTab === 'specs' && (
-              <div className={styles.specifications}>
-                <h3>Thông số kỹ thuật</h3>
-                <div className={styles.specsGrid}>
-                  <div className={styles.specItem}>
-                    <EnvironmentOutlined />
-                    <div>
-                      <span className={styles.specLabel}>Pin</span>
-                      <span className={styles.specValue}>{vehicle.specifications.battery}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <CarOutlined />
-                    <div>
-                      <span className={styles.specLabel}>Tầm hoạt động</span>
-                      <span className={styles.specValue}>{vehicle.specifications.range}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <ClockCircleOutlined />
-                    <div>
-                      <span className={styles.specLabel}>Sạc</span>
-                      <span className={styles.specValue}>{vehicle.specifications.charging}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <SafetyOutlined />
-                    <div>
-                      <span className={styles.specLabel}>Số chỗ ngồi</span>
-                      <span className={styles.specValue}>{vehicle.specifications.seats}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <ThunderboltOutlined />
-                    <div>
-                      <span className={styles.specLabel}>Tốc độ tối đa</span>
-                      <span className={styles.specValue}>{vehicle.specifications.topSpeed}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <StarOutlined />
-                    <div>
-                      <span className={styles.specLabel}>Tăng tốc</span>
-                      <span className={styles.specValue}>{vehicle.specifications.acceleration}</span>
-                    </div>
-                  </div>
+                <div className={styles.noteSection}>
+                  <p><strong>Lưu ý:</strong> EVS Rent tin tưởng khách hàng và tạo điều kiện thuận lợi nhất cho việc thuê xe. Chúng tôi cam kết bảo vệ quyền lợi khách hàng và đảm bảo an toàn trong suốt quá trình sử dụng dịch vụ.</p>
                 </div>
               </div>
-            )}
-
-            {activeTab === 'rental' && (
-              <div className={styles.rentalInfo}>
-                <h3>Thông tin thuê xe</h3>
-                <div className={styles.rentalGrid}>
-                  <div className={styles.rentalItem}>
-                    <DollarOutlined />
-                    <div>
-                      <span className={styles.rentalLabel}>Tiền cọc</span>
-                      <span className={styles.rentalValue}>{vehicle.rentalInfo.deposit}</span>
-                    </div>
-                  </div>
-                  <div className={styles.rentalItem}>
-                    <SafetyOutlined />
-                    <div>
-                      <span className={styles.rentalLabel}>Bảo hiểm</span>
-                      <span className={styles.rentalValue}>{vehicle.rentalInfo.insurance}</span>
-                    </div>
-                  </div>
-                  <div className={styles.rentalItem}>
-                    <CarOutlined />
-                    <div>
-                      <span className={styles.rentalLabel}>Giao xe</span>
-                      <span className={styles.rentalValue}>{vehicle.rentalInfo.delivery}</span>
-                    </div>
-                  </div>
-                  <div className={styles.rentalItem}>
-                    <ClockCircleOutlined />
-                    <div>
-                      <span className={styles.rentalLabel}>Hủy đặt</span>
-                      <span className={styles.rentalValue}>{vehicle.rentalInfo.cancellation}</span>
-                    </div>
-                  </div>
-                </div>
-              </div>
-            )}
+            </div>
           </div>
         </div>
-      </div>
+      )}
     </div>
   );
 };
