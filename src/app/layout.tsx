@@ -19,11 +19,11 @@ export default function RootLayout({
   return (
     <html lang="vi">
       <body>
-        <ConditionalLayout>
-          <AuthProvider>
+        <AuthProvider>
+          <ConditionalLayout>
             {children}
-          </AuthProvider>
-        </ConditionalLayout>
+          </ConditionalLayout>
+        </AuthProvider>
       </body>
     </html>
   );
