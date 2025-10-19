@@ -2,22 +2,10 @@
   padding: 80px 0;
   background: linear-gradient(135deg, #f8fffe 0%, #f0f9f0 100%);
   position: relative;
-  
-  &::before {
-    content: '';
-    position: absolute;
-    top: 0;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    background: url('/images/bg-pattern.png') repeat;
-    opacity: 0.03;
-    z-index: 0;
-  }
 }
 
 .container {
-  max-width: 1240px;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 20px;
   position: relative;
@@ -243,33 +231,6 @@
   }
 }
 
-.imageDots {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  display: flex;
-  gap: 6px;
-  z-index: 2;
-}
-
-.dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 50%;
-  background: rgba(255, 255, 255, 0.5);
-  cursor: pointer;
-  transition: all 0.3s ease;
-  
-  &.active {
-    background: #2FA71D;
-    transform: scale(1.2);
-  }
-  
-  &:hover {
-    background: rgba(255, 255, 255, 0.8);
-  }
-}
 
 .vehicleInfo {
   padding: 25px;
@@ -323,7 +284,9 @@
   display: flex;
   flex-wrap: wrap;
   gap: 8px;
-  margin-bottom: 20px;
+  margin-bottom: 15px;
+  max-height: 75px; 
+  overflow: hidden;
 }
 
 .feature {
@@ -334,6 +297,36 @@
   font-size: 14px;
   font-weight: 500;
   border: 1px solid #e9ecef;
+  
+  &:last-child {
+    background: #6c757d;
+    color: white;
+    border: 1px solid #6c757d;
+    font-weight: 600;
+  }
+}
+
+.location {
+  align-items: flex-start;
+  gap: 8px;
+  color: #666;
+  font-size: 14px;
+  margin-bottom: 15px;
+  min-height: 35px; 
+  
+  svg {
+    font-size: 16px;
+    color: #2FA71D;
+    margin-right: 5px;
+    margin-top: 2px; 
+    flex-shrink: 0;
+  }
+  
+  span {
+    flex: 1;
+    word-wrap: break-word;
+    overflow-wrap: break-word;
+  }
 }
 
 .price {
