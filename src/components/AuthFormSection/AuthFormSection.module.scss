@@ -4,6 +4,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
+  padding: 40px 0;
+  max-height: 100vh;
+  overflow-y: auto;
 }
 
 .formContainer {
@@ -13,7 +16,7 @@
 }
 
 .titleContainer {
-  margin-bottom: 40px;
+  margin-bottom: 20px;
 }
 
 .titlesContainer {
@@ -24,11 +27,11 @@
   color: #374CA0;
   leading-trim: both;
   text-edge: cap;
-  font-size: 38px;
+  font-size: 32px;
   font-style: normal;
   font-weight: 590;
-  line-height: 55px;
-  margin: 0 0 16px 0;
+  line-height: 45px;
+  margin: 0 0 12px 0;
   text-align: center;
 }
 .tabContainer {
@@ -71,7 +74,7 @@
 .authForm {
   display: flex;
   flex-direction: column;
-  gap: 25px;
+  gap: 20px;
 }
 
 .inputGroup {
@@ -88,9 +91,9 @@
 }
 
 .input {
-  padding: 18px 24px;
+  padding: 14px 20px;
   border: 2px solid #E6E6E6;
-  border-radius: 10px;
+  border-radius: 8px;
   font-size: 16px;
   background-color: white;
   color: #000;
@@ -173,6 +176,13 @@
   font-weight: 400;
   line-height: 55px;
   margin-top: -14px;
+  
+  &.error {
+    color: #dc2626;
+    background: none;
+    border: none;
+    padding: 0;
+  }
 }
 
 .forgotPassword {
@@ -338,6 +348,10 @@
 }
 
 @media (max-width: 480px) {
+  .formSection {
+    padding: 15px 0;
+  }
+  
   .titlesContainer {
     margin-bottom: 15px;
   }
@@ -353,6 +367,11 @@
 
   .input {
     font-size: 14px;
+    padding: 12px 16px;
+  }
+  
+  .authForm {
+    gap: 16px;
   }
 }
 

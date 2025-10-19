@@ -4,6 +4,8 @@ import React, { useState } from 'react';
 import styles from './AuthFormSection.module.scss';
 
 interface FormData {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -35,6 +37,8 @@ const AuthFormSection: React.FC<AuthFormSectionProps> = ({
   
   const passwordsMatch = formData.password === formData.confirmPassword;
   const showPasswordError = !isLogin && formData.confirmPassword && !passwordsMatch;
+  const isPasswordValid = formData.password.length >= 8;
+  const canSubmit = isLogin || (passwordsMatch && isPasswordValid);
 
   return (
     <div className={styles.formSection}>
@@ -49,6 +53,34 @@ const AuthFormSection: React.FC<AuthFormSectionProps> = ({
 
 
         <form className={styles.authForm} onSubmit={onSubmit}>
+          {!isLogin && (
+            <>
+              <div className={styles.inputGroup}>
+                <label htmlFor="firstName">Họ</label>
+                <input
+                  type="text"
+                  id="firstName"
+                  value={formData.firstName}
+                  onChange={(e) => onInputChange('firstName', e.target.value)}
+                  className={styles.input}
+                  required
+                />
+              </div>
+
+              <div className={styles.inputGroup}>
+                <label htmlFor="lastName">Tên</label>
+                <input
+                  type="text"
+                  id="lastName"
+                  value={formData.lastName}
+                  onChange={(e) => onInputChange('lastName', e.target.value)}
+                  className={styles.input}
+                  required
+                />
+              </div>
+            </>
+          )}
+
           <div className={styles.inputGroup}>
             <label htmlFor="email">Email</label>
             <input
@@ -73,8 +105,10 @@ const AuthFormSection: React.FC<AuthFormSectionProps> = ({
                 required
               /> 
             </div>
-            {!isLogin && formData.password && (
-              <p className={styles.passwordHint}>Phải có ít nhất 8 ký tự</p>
+            {!isLogin && formData.password && !isPasswordValid && (
+              <p className={`${styles.passwordHint} ${styles.error}`}>
+                Phải có ít nhất 8 ký tự
+              </p>
             )}
           </div>
 
@@ -115,13 +149,13 @@ const AuthFormSection: React.FC<AuthFormSectionProps> = ({
             type="submit" 
             className={styles.authButton} 
             style={{ display: 'block', width: '100%' }}
-            disabled={isLoading || (!isLogin && !passwordsMatch)}
+            disabled={isLoading || !canSubmit}
           >
             {isLoading ? 'Đang đăng nhập...' : (isLogin ? 'Đăng nhập' : 'Đăng ký')}
           </button>
 
           <div className={styles.separator}>
-            <span>OR</span>
+            <span>Hoặc</span>
           </div>
 
 

@@ -11,6 +11,8 @@ import { loginService } from '../../services/login.service';
 import { useAuth } from '../../contexts/AuthContext';
 
 interface FormData {
+  firstName: string;
+  lastName: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -29,6 +31,8 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState<FormData>({
+    firstName: '',
+    lastName: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -48,10 +52,24 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
     setError(null);
     
     if (type === 'register') {
+      // Validate password length
+      if (formData.password.length < 8) {
+        setError('Mật khẩu phải có ít nhất 8 ký tự');
+        return;
+      }
+      
+      // Validate password match
+      if (formData.password !== formData.confirmPassword) {
+        setError('Mật khẩu không khớp');
+        return;
+      }
+      
       // Handle registration
       setIsLoading(true);
       try {
         const response = await loginService.createUser({
+          first_name: formData.firstName,
+          last_name: formData.lastName,
           email: formData.email,
           password: formData.password
         });
