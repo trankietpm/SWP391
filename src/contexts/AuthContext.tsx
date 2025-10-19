@@ -7,6 +7,8 @@ interface User {
   id: string;
   email: string;
   name: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface AuthContextType {
@@ -43,12 +45,15 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       try {
         const userInfo = await loginService.getCurrentUser(storedToken);
         
-        // Extract name from email (remove @ and everything after)
-        const nameFromEmail = userInfo.email.split('@')[0];
+        // Use name from API response, or create from first_name + last_name
+        const displayName = userInfo.name || 
+          (userInfo.first_name && userInfo.last_name ? 
+            `${userInfo.first_name} ${userInfo.last_name}` : 
+            userInfo.email.split('@')[0]);
         
         setUser({
           ...userInfo,
-          name: nameFromEmail
+          name: displayName
         });
       setToken(storedToken);
       setIsAuthenticated(true);
@@ -68,29 +73,28 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     }
   };
 
-  // Function to check authentication status
-  const checkAuthStatus = async () => {
-    const storedToken = localStorage.getItem('token');
-    
-    if (storedToken) {
-      try {
-        await fetchCurrentUser();
-      } catch (error) {
-        console.error('Error checking auth status:', error);
+  useEffect(() => {
+    // Initial check on mount
+    const checkAuthStatus = async () => {
+      const storedToken = localStorage.getItem('token');
+      
+      if (storedToken) {
+        try {
+          await fetchCurrentUser();
+        } catch (error) {
+          console.error('Error checking auth status:', error);
+          setUser(null);
+          setToken(null);
+          setIsAuthenticated(false);
+        }
+      } else {
         setUser(null);
         setToken(null);
         setIsAuthenticated(false);
       }
-    } else {
-      setUser(null);
-      setToken(null);
-      setIsAuthenticated(false);
-    }
-    setIsLoading(false);
-  };
+      setIsLoading(false);
+    };
 
-  useEffect(() => {
-    // Initial check on mount
     checkAuthStatus();
   }, []);
 
