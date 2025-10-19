@@ -57,7 +57,7 @@
 
 .searchForm {
   width: 100%;
-  max-width: 1000px;
+  max-width: 1100px;
   margin: 0 auto;
 }
 
@@ -66,6 +66,7 @@
   border-radius: 25px;
   padding: 30px;
   display: flex;
+  align-items: flex-start;
   gap: 20px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.15);
   backdrop-filter: blur(20px);
@@ -76,6 +77,24 @@
     gap: 25px;
     padding: 30px;
     border-radius: 20px;
+  }
+}
+
+.fieldWrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  
+  &:nth-child(1) {
+    flex: 0.8;
+  }
+  
+  &:nth-child(2) {
+    flex: 0.8;
+  }
+  
+  &:nth-child(3) {
+    flex: 1.6;
   }
 }
 
@@ -175,29 +194,37 @@
     }
   }
   
-  .ant-select-dropdown {
+  :global(.ant-select-dropdown) {
     min-width: 200px !important;
     border-radius: 12px !important;
     box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15) !important;
     border: 1px solid rgba(47, 167, 29, 0.2) !important;
     overflow: hidden !important;
     animation: dropdownFadeIn 0.3s ease-out !important;
+    z-index: 9999 !important;
     
-    .ant-select-item {
+    :global(.ant-select-item) {
       padding: 12px 16px !important;
       font-weight: 500 !important;
       color: #2c3e50 !important;
       transition: all 0.3s ease !important;
+      border-bottom: 1px solid rgba(0, 0, 0, 0.05) !important;
+      
+      &:last-child {
+        border-bottom: none !important;
+      }
       
       &:hover {
         background: rgba(47, 167, 29, 0.1) !important;
         color: #2FA71D !important;
+        transform: translateX(4px) !important;
       }
       
       &.ant-select-item-option-selected {
         background: rgba(47, 167, 29, 0.15) !important;
         color: #2FA71D !important;
         font-weight: 600 !important;
+        border-left: 3px solid #2FA71D !important;
       }
     }
   }
@@ -320,6 +347,27 @@
   
   .searchContainer {
     padding: 20px;
+  }
+}
+
+.errorMessage {
+  color: #ff4d4f;
+  font-size: 12px;
+  margin-top: 8px;
+  margin-left: 0;
+  font-weight: 500;
+  animation: fadeIn 0.3s ease;
+  text-align: left;
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(-5px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
   }
 }
 
