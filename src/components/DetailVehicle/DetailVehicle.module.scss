@@ -51,6 +51,50 @@
   }
 }
 
+.successMessage {
+  background: linear-gradient(135deg, #52c41a 0%, #73d13d 100%);
+  color: white;
+  padding: 30px;
+  border-radius: 16px;
+  margin: 20px 0;
+  text-align: center;
+  box-shadow: 0 8px 32px rgba(82, 196, 26, 0.3);
+  
+  .anticon {
+    font-size: 48px;
+    margin-bottom: 16px;
+    display: block;
+  }
+  
+  h3 {
+    font-size: 24px;
+    font-weight: 700;
+    margin: 0 0 12px 0;
+  }
+  
+  p {
+    font-size: 16px;
+    margin: 0 0 20px 0;
+    opacity: 0.9;
+  }
+  
+  .closeSuccess {
+    background: rgba(255, 255, 255, 0.2);
+    color: white;
+    border: 1px solid rgba(255, 255, 255, 0.3);
+    padding: 10px 24px;
+    border-radius: 8px;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: rgba(255, 255, 255, 0.3);
+      transform: translateY(-2px);
+    }
+  }
+}
+
 .header {
   margin-bottom: 30px;
 }

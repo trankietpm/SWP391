@@ -6,6 +6,10 @@ import dayjs from 'dayjs';
 import Link from 'next/link';
 import { carService, Car } from '../../services/car.service';
 import { stationService, Station } from '../../services/station.service';
+import { bookingService, CreateBookingRequest } from '../../services/booking.service';
+import BookingSuccess from '../BookingSuccess/BookingSuccess';
+import { useAuth } from '../../contexts/AuthContext';
+import { useRouter } from 'next/navigation';
 import styles from './DetailVehicle.module.scss';
 
 
@@ -14,6 +18,8 @@ interface DetailVehicleProps {
 }
 
 const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
+  const { isAuthenticated, user } = useAuth();
+  const router = useRouter();
   const [showGallery, setShowGallery] = useState(false);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
@@ -25,6 +31,16 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
   const [loading, setLoading] = useState(true);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showCollateralModal, setShowCollateralModal] = useState(false);
+  const [isBooking, setIsBooking] = useState(false);
+  const [bookingSuccess, setBookingSuccess] = useState(false);
+  const [bookingData, setBookingData] = useState<{
+    vehicleName: string;
+    stationAddress: string;
+    startDate: string;
+    endDate: string;
+    totalDays: number;
+    totalPrice: number;
+  } | null>(null);
 
   // Prevent body scroll when any modal is open
   useEffect(() => {
@@ -120,6 +136,82 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
   const goToImage = (index: number) => {
     setCurrentGalleryIndex(index);
   };
+
+  const handleBooking = async () => {
+    // Kiểm tra đăng nhập trước
+    if (!isAuthenticated || !user) {
+      alert('Vui lòng đăng nhập để thuê xe');
+      router.push('/sign-in');
+      return;
+    }
+
+    // Kiểm tra đã chọn ngày giờ chưa
+    if (!dateRange || !dateRange[0] || !dateRange[1]) {
+      alert('Vui lòng chọn thời gian thuê xe');
+      return;
+    }
+
+    if (!vehicle) {
+      alert('Không tìm thấy thông tin xe');
+      return;
+    }
+
+    setIsBooking(true);
+    try {
+      const bookingData: CreateBookingRequest = {
+        user_id: user?.id || '1',
+        car_id: vehicle.id,
+        start_date: dateRange[0].toISOString(),
+        end_date: dateRange[1].toISOString(),
+        total_days: totalDays,
+        daily_price: vehicle.price,
+        total_price: totalPrice
+      };
+
+      const result = await bookingService.createBooking(bookingData);
+      
+      // Lưu thông tin booking để hiển thị trong success screen
+      setBookingData({
+        vehicleName: vehicle.name,
+        stationAddress: station?.address || 'Địa chỉ không xác định',
+        startDate: dateRange[0].toISOString(),
+        endDate: dateRange[1].toISOString(),
+        totalDays: totalDays,
+        totalPrice: totalPrice
+      });
+      
+      setBookingSuccess(true);
+      
+      // Reset form
+      setDateRange(null);
+      setTotalDays(0);
+      setTotalPrice(0);
+    } catch (error) {
+      console.error('Error creating booking:', error);
+      alert('Có lỗi xảy ra khi tạo booking. Vui lòng thử lại.');
+    } finally {
+      setIsBooking(false);
+    }
+  };
+
+
+  // Hiển thị BookingSuccess component khi booking thành công
+  if (bookingSuccess && bookingData) {
+    return (
+      <BookingSuccess
+        vehicleName={bookingData.vehicleName}
+        stationAddress={bookingData.stationAddress}
+        startDate={bookingData.startDate}
+        endDate={bookingData.endDate}
+        totalDays={bookingData.totalDays}
+        totalPrice={bookingData.totalPrice}
+        onClose={() => {
+          setBookingSuccess(false);
+          setBookingData(null);
+        }}
+      />
+    );
+  }
 
   if (loading) {
     return (
@@ -488,8 +580,12 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
                 </div>
 
                 <div className={styles.bookingActions}>
-                  <button className={styles.rentButton}>
-                    Thuê ngay
+                  <button 
+                    className={styles.rentButton}
+                    onClick={handleBooking}
+                    disabled={isBooking || !dateRange || !dateRange[0] || !dateRange[1]}
+                  >
+                    {isBooking ? 'Đang xử lý...' : 'Thuê ngay'}
                   </button>
                 </div>
               </div>
