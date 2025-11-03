@@ -90,5 +90,36 @@ export const stationService = {
     return allVehicles
       .filter(vehicle => vehicle.stationId === stationId)
       .reduce((total, vehicle) => total + vehicle.availableCount, 0);
+  },
+
+  async createStation(data: Omit<Station, 'id' | 'user_created' | 'date_created'>): Promise<Station> {
+    const response = await axios.post<StationResponse>(`${API_BASE_URL}/items/Station`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data.data;
+  },
+
+  async updateStation(id: number, data: Partial<Omit<Station, 'id' | 'user_created' | 'date_created'>>): Promise<Station> {
+    const response = await axios.patch<StationResponse>(`${API_BASE_URL}/items/Station/${id}`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data.data;
+  },
+
+  async deleteStation(id: number): Promise<boolean> {
+    try {
+      await axios.delete(`${API_BASE_URL}/items/Station/${id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 };
