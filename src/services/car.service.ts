@@ -23,6 +23,7 @@ export interface Car {
   acceleration: string;
   highlights: string[];
   images: number[];
+  battery_status?: number;
 }
 
 export interface CarResponse {
@@ -57,6 +58,27 @@ export const carService = {
   // Get image URL from directus_files_id
   getImageUrl(directusFilesId: string): string {
     return `${API_BASE_URL}/assets/${directusFilesId}`;
+  },
+
+  // Upload file to Directus
+  async uploadFile(file: File): Promise<string> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const formData = new FormData();
+    formData.append('file', file);
+
+    const headers: Record<string, string> = {};
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+
+    const response = await axios.post<{ data: { id: string } }>(`${API_BASE_URL}/files`, formData, {
+      headers: {
+        ...headers,
+        'Content-Type': 'multipart/form-data',
+      },
+    });
+
+    return response.data.data.id;
   },
 
   // Filter vehicles to only show those with active stations
@@ -119,5 +141,36 @@ export const carService = {
       },
     });
     return response.data.data;
+  },
+
+  async createCar(data: Omit<Car, 'id' | 'user_created' | 'date_created'>): Promise<Car> {
+    const response = await axios.post<CarResponse>(`${API_BASE_URL}/items/Car`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data.data;
+  },
+
+  async updateCar(id: number, data: Partial<Omit<Car, 'id' | 'user_created' | 'date_created'>>): Promise<Car> {
+    const response = await axios.patch<CarResponse>(`${API_BASE_URL}/items/Car/${id}`, data, {
+      headers: {
+        'Content-Type': 'application/json',
+      },
+    });
+    return response.data.data;
+  },
+
+  async deleteCar(id: number): Promise<boolean> {
+    try {
+      await axios.delete(`${API_BASE_URL}/items/Car/${id}`, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+      });
+      return true;
+    } catch {
+      return false;
+    }
   }
 };

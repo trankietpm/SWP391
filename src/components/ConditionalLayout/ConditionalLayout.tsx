@@ -13,7 +13,13 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const pathname = usePathname();
   const isAuthPage =
     pathname === "/sign-in" ||
-    pathname === "/sign-up" ;
+    pathname === "/sign-up" ||
+    pathname === "/admin" ||
+    pathname === "/admin/stations" ||
+    pathname === "/admin/vehicles" ||
+    pathname === "/admin/staff" ||
+    pathname === "/admin/users"||
+    pathname === "/admin/bookings";
   
   return (
     <>

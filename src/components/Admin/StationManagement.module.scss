@@ -1,0 +1,615 @@
+.container {
+  padding: 24px;
+  background: #f5f5f5;
+  min-height: 100vh;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 24px;
+  
+  h1 {
+    font-size: 28px;
+    font-weight: 600;
+    color: #001529;
+    margin: 0;
+  }
+}
+
+.addBtn {
+  background: #1890ff;
+  color: white;
+  border: none;
+  border-radius: 8px;
+  padding: 12px 20px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #40a9ff;
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+  }
+}
+
+.filters {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+.searchBox, .filterBox {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  
+  svg {
+    color: #666;
+  }
+  
+  input, select {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    
+    &::placeholder {
+      color: #999;
+    }
+  }
+}
+
+.searchBox {
+  flex: 1;
+  min-width: 200px;
+  
+  input {
+    width: 100%;
+  }
+}
+
+.filterGroup {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #f5f5f5;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #d9d9d9;
+  
+  svg {
+    color: #666;
+  }
+  
+  select {
+    border: none;
+    background: transparent;
+    outline: none;
+    font-size: 14px;
+    cursor: pointer;
+  }
+}
+
+.tableContainer {
+  background: white;
+  border-radius: 12px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  overflow: hidden;
+  margin-bottom: 24px;
+}
+
+.table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  th {
+    background: #fafafa;
+    padding: 16px 12px;
+    text-align: left;
+    font-weight: 600;
+    color: #001529;
+    border-bottom: 1px solid #f0f0f0;
+    font-size: 14px;
+  }
+  
+  td {
+    padding: 16px 12px;
+    border-bottom: 1px solid #f0f0f0;
+    vertical-align: top;
+  }
+  
+  tr {
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: #f8f9fa;
+    }
+    
+    &:last-child td {
+      border-bottom: none;
+    }
+  }
+}
+
+.stationInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  
+  svg {
+    color: #1890ff;
+    font-size: 18px;
+    margin-top: 2px;
+  }
+  
+  .stationName {
+    font-weight: 600;
+    color: #001529;
+    font-size: 14px;
+    margin-bottom: 4px;
+  }
+  
+  .stationDistrict {
+    color: #8c8c8c;
+    font-size: 12px;
+  }
+}
+
+.addressInfo {
+  .coordinates {
+    color: #8c8c8c;
+    font-size: 12px;
+    margin-top: 4px;
+  }
+}
+
+.managerInfo {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+  
+  svg {
+    color: #52c41a;
+    font-size: 18px;
+    margin-top: 2px;
+  }
+  
+  .openingHours {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    color: #8c8c8c;
+    font-size: 12px;
+    margin-top: 4px;
+    
+    svg {
+      color: #8c8c8c;
+      font-size: 12px;
+    }
+  }
+}
+
+.contactInfo {
+  .contactItem {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    margin-bottom: 4px;
+    font-size: 13px;
+    
+    svg {
+      color: #1890ff;
+      font-size: 14px;
+    }
+    
+    &:last-child {
+      margin-bottom: 0;
+    }
+  }
+}
+
+.statusInfo {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  
+  svg {
+    font-size: 16px;
+  }
+  
+  span {
+    font-size: 13px;
+    font-weight: 500;
+  }
+}
+
+.vehicleInfo {
+  text-align: center;
+  
+  .vehicleCount {
+    font-size: 16px;
+    font-weight: 600;
+    color: #001529;
+  }
+  
+  .vehicleLabel {
+    font-size: 12px;
+    color: #8c8c8c;
+    margin-top: 2px;
+  }
+}
+
+.actions {
+  display: flex;
+  gap: 8px;
+}
+
+.viewBtn, .editBtn, .deleteBtn {
+  width: 32px;
+  height: 32px;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  
+  svg {
+    font-size: 14px;
+  }
+}
+
+.viewBtn {
+  background: #e6f7ff;
+  color: #1890ff;
+  
+  &:hover {
+    background: #bae7ff;
+  }
+}
+
+.editBtn {
+  background: #fff7e6;
+  color: #fa8c16;
+  
+  &:hover {
+    background: #ffd591;
+  }
+}
+
+.deleteBtn {
+  background: #fff2f0;
+  color: #ff4d4f;
+  
+  &:hover {
+    background: #ffccc7;
+  }
+}
+
+.pagination {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-top: 24px;
+}
+
+.paginationInfo {
+  color: #8c8c8c;
+  font-size: 14px;
+}
+
+.paginationControls {
+  display: flex;
+  gap: 8px;
+}
+
+.paginationBtn {
+  padding: 8px 12px;
+  border: 1px solid #d9d9d9;
+  background: white;
+  color: #595959;
+  border-radius: 6px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.3s ease;
+  
+  &:hover:not(:disabled) {
+    border-color: #1890ff;
+    color: #1890ff;
+  }
+  
+  &:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+  }
+  
+  &.active {
+    background: #1890ff;
+    color: white;
+    border-color: #1890ff;
+  }
+}
+
+.modalOverlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.modalContent {
+  background: white;
+  border-radius: 12px;
+  max-width: 800px;
+  width: 90%;
+  max-height: 90vh;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
+}
+
+.modalHeader {
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: #fafafa;
+  
+  h2 {
+    margin: 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #001529;
+  }
+}
+
+.closeBtn {
+  background: none;
+  border: none;
+  font-size: 24px;
+  color: #8c8c8c;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #f5f5f5;
+    color: #595959;
+  }
+}
+
+.modalBody {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+}
+
+.modalFooter {
+  padding: 16px 24px;
+  border-top: 1px solid #f0f0f0;
+  display: flex;
+  justify-content: flex-end;
+  gap: 12px;
+  background: #fafafa;
+}
+
+.formRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 16px;
+  margin-bottom: 16px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.formGroup {
+  display: flex;
+  flex-direction: column;
+  
+  label {
+    font-weight: 500;
+    color: #001529;
+    margin-bottom: 6px;
+    font-size: 14px;
+  }
+  
+  input, select, textarea {
+    padding: 12px 16px;
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    
+    &:focus {
+      outline: none;
+      border-color: #1890ff;
+      box-shadow: 0 0 0 2px rgba(24, 144, 255, 0.2);
+    }
+  }
+  
+  textarea {
+    min-height: 80px;
+    line-height: 1.5;
+    resize: vertical;
+  }
+}
+
+.servicesInput {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+  
+  input {
+    flex: 1;
+  }
+  
+  button {
+    padding: 12px 16px;
+    background: #1890ff;
+    color: white;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    font-size: 14px;
+    transition: all 0.3s ease;
+    
+    &:hover {
+      background: #40a9ff;
+    }
+  }
+}
+
+.servicesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.serviceTag {
+  background: #f0f0f0;
+  color: #595959;
+  padding: 6px 12px;
+  border-radius: 16px;
+  font-size: 12px;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  
+  button {
+    background: none;
+    border: none;
+    color: #8c8c8c;
+    cursor: pointer;
+    font-size: 14px;
+    padding: 0;
+    margin-left: 4px;
+    
+    &:hover {
+      color: #ff4d4f;
+    }
+  }
+}
+
+.cancelBtn, .saveBtn {
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.cancelBtn {
+  background: white;
+  color: #595959;
+  border: 1px solid #d9d9d9;
+  
+  &:hover {
+    border-color: #1890ff;
+    color: #1890ff;
+  }
+}
+
+.saveBtn {
+  background: #1890ff;
+  color: white;
+  border: none;
+  
+  &:hover {
+    background: #40a9ff;
+  }
+}
+
+.viewContent {
+  padding: 24px;
+  overflow-y: auto;
+  flex: 1;
+  max-height: calc(90vh - 120px);
+}
+
+.viewSection {
+  margin-bottom: 24px;
+  
+  h3 {
+    font-size: 16px;
+    font-weight: 600;
+    color: #001529;
+    margin: 0 0 12px 0;
+    padding-bottom: 8px;
+    border-bottom: 1px solid #f0f0f0;
+  }
+}
+
+.viewGrid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 12px;
+  
+  @media (max-width: 768px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.viewItem {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  
+  strong {
+    color: #001529;
+    font-weight: 600;
+    font-size: 13px;
+  }
+  
+  span, p {
+    color: #595959;
+    font-size: 14px;
+    margin: 0;
+  }
+}
+
+.statusBadge {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.servicesList {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  
+  .serviceTag {
+    background: #f0f0f0;
+    color: #595959;
+    padding: 6px 12px;
+    border-radius: 16px;
+    font-size: 12px;
+  }
+}
