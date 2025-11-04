@@ -1,0 +1,1 @@
+export const pendingUsers = new Map<string, any>(); 
