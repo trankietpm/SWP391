@@ -1,4 +1,4 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, UseGuards, MiddlewareConsumer, NestModule, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, UseGuards, ForbiddenException } from '@nestjs/common';
 import { UserService } from './user.service';
 import { UserReqDto } from './dtos/user-req.dto';
 import { UserResDto } from './dtos/user-res.dto';
@@ -11,11 +11,10 @@ import { Public } from '../../common/decorators/public.decorator';
 import { CurrentUser } from '../../common/decorators/current-user.decorator';
 import { UserRole } from '../../enums/user-role.enum';
 import { User } from './user.entity';
-import { UserMiddleware } from '../../common/middleware/user.middleware';
 
 @Controller('user')
 @UseGuards(AuthGuard, RolesGuard)
-export class UserController implements NestModule {
+export class UserController {
   constructor(private readonly userService: UserService) {}
 
   @Get()
@@ -99,9 +98,5 @@ export class UserController implements NestModule {
   @Public()
   async login(@Body() loginDto: LoginDto) {
     return this.userService.login(loginDto.email, loginDto.password);
-  }
-
-  configure(consumer: MiddlewareConsumer) {
-    consumer.apply(UserMiddleware).forRoutes('*');
   }
 }

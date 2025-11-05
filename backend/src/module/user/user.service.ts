@@ -1,6 +1,7 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import { JwtService } from '@nestjs/jwt';
 import { User } from './user.entity';
 import { UserReqDto } from './dtos/user-req.dto';
 import { RegisterDto } from './dtos/register.dto';
@@ -16,6 +17,7 @@ export class UserService {
     @InjectRepository(User)
     private readonly userRepository: Repository<User>,
     private readonly mailService: MailService,
+    private readonly jwtService: JwtService,
   ) {}
 
   async findAll(): Promise<User[]> {
@@ -155,7 +157,7 @@ export class UserService {
     }
   }
 
-  async login(email: string, password: string): Promise<{ user: Omit<User, 'password'>; message: string }> {
+  async login(email: string, password: string): Promise<{ access_token: string; user: Omit<User, 'password'>; message: string }> {
     const user = await this.userRepository
       .createQueryBuilder('user')
       .where('user.email = :email', { email })
@@ -178,7 +180,11 @@ export class UserService {
 
     const { password: _, ...userWithoutPassword } = user;
 
+    const payload = { sub: user.user_id, email: user.email };
+    const access_token = this.jwtService.sign(payload);
+
     return {
+      access_token,
       user: userWithoutPassword,
       message: 'Đăng nhập thành công',
     };
