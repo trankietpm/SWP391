@@ -68,20 +68,16 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       setIsLoading(true);
       try {
         const response = await loginService.createUser({
-          first_name: formData.firstName,
-          last_name: formData.lastName,
+          first_name: formData.lastName,  
+          last_name: formData.firstName,   
           email: formData.email,
           password: formData.password
         });
         
-        if (response.success === 1) {
-          // Registration successful, show email verification
-          setShowEmailVerification(true);
-        } else {
-          setError(response.message || 'Registration failed');
-        }
-      } catch (error) {
-        setError('Registration failed');
+        // Registration successful, show email verification
+        setShowEmailVerification(true);
+      } catch (error: any) {
+        setError(error.response?.data?.message || 'Registration failed');
       } finally {
         setIsLoading(false);
       }
@@ -94,28 +90,29 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
           password: formData.password
         });
         
-        if (response.success) {
-          // Store token and user data
-          if (response.token) {
-            const userData = {
-              id: '1', 
-              email: formData.email,
-              name: formData.email.split('@')[0],
-            };
-            
-            // Use AuthContext to login
-            login(response.token, userData);
-            
-            // Fetch current user data to ensure navbar updates
-            await fetchCurrentUser();
-          }
+        // Store token and user data
+        if (response.access_token) {
+          const userData = {
+            id: response.user.user_id.toString(),
+            email: response.user.email,
+            name: `${response.user.last_name} ${response.user.first_name}`.trim() || response.user.email.split('@')[0],
+            first_name: response.user.first_name,
+            last_name: response.user.last_name,
+            role: response.user.role?.toUpperCase() || response.user.role,
+          };
           
-          router.push('/');
-        } else {
-          setError(response.message || 'Login failed');
+          // Use AuthContext to login
+          login(response.access_token, userData);
+          
+          // Fetch current user data to ensure navbar updates
+          await fetchCurrentUser();
         }
-      } catch (error) {
-        setError('Login failed');
+        
+        router.push('/');
+      } catch (error: any) {
+        console.error('Login error:', error);
+        const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+        setError(errorMessage);
       } finally {
         setIsLoading(false);
       }

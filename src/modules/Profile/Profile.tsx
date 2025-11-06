@@ -47,9 +47,9 @@ const ProfilePage: React.FC = () => {
           phone: '',
           address: ''
         });
-        } catch (error) {
-          // Handle error silently
-        } finally {
+      } catch (error) {
+        // Handle error silently
+      } finally {
         setLoading(false);
       }
     };
@@ -65,10 +65,10 @@ const ProfilePage: React.FC = () => {
   };
 
   const handleSave = async () => {
-    if (!user?.id || !token) return;
+    if (!user?.user_id || !token) return;
     
     try {
-      const updatedData = await loginService.updateUserProfile(user.id, {
+      const updatedData = await loginService.updateUserProfile(user.user_id.toString(), {
         first_name: formData.firstName,
         last_name: formData.lastName,
         phone: formData.phone,
@@ -125,11 +125,11 @@ const ProfilePage: React.FC = () => {
             <div className={styles.accountInfo}>
               <div className={styles.userAvatar}>
                 <div className={styles.avatar}>
-                  {userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim().charAt(0).toUpperCase() || 'U' : user?.name?.charAt(0).toUpperCase() || 'U'}
+                  {userProfile ? `${userProfile.last_name || ''} ${userProfile.first_name || ''}`.trim().charAt(0).toUpperCase() || 'U' : user?.name?.charAt(0).toUpperCase() || 'U'}
                 </div>
               <div className={styles.userInfo}>
                 <h3 className={styles.userName}>
-                  {userProfile ? `${userProfile.first_name || ''} ${userProfile.last_name || ''}`.trim() || 'User' : user?.name || 'User'}
+                  {userProfile ? `${userProfile.last_name || ''} ${userProfile.first_name || ''}`.trim() || 'User' : user?.name || 'User'}
                 </h3>
                 <p className={styles.userEmail}>{formData.email}</p>
               </div>

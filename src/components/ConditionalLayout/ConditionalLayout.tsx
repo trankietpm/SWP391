@@ -14,13 +14,8 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const isAuthPage =
     pathname === "/sign-in" ||
     pathname === "/sign-up" ||
-    pathname === "/admin" ||
-    pathname === "/admin/stations" ||
-    pathname === "/admin/vehicles" ||
-    pathname === "/admin/staff" ||
-    pathname === "/admin/users"||
-    pathname === "/admin/bookings";
-  
+    pathname.startsWith("/admin");
+
   return (
     <>
       {!isAuthPage && <Navbar />}
