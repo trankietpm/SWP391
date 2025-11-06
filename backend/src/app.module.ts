@@ -27,10 +27,6 @@ import { AdminSeed } from './common/seed/admin.seed';
       entities: [User, Station, VehicleModel, Vehicle],
       autoLoadEntities: true,
       synchronize: true,
-      charset: 'utf8mb4',
-      extra: {
-        charset: 'utf8mb4_unicode_ci',
-      },
     }),
     TypeOrmModule.forFeature([User]),
     UserModule,

@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, ForbiddenException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { JwtService } from '@nestjs/jwt';
@@ -24,19 +24,44 @@ export class UserService {
     return this.userRepository.find();
   }
 
-  async findOne(id: number): Promise<User> {
+  async findOne(id: number, currentUserRole?: UserRole, currentUserId?: number): Promise<User> {
     if (!id) throw new NotFoundException('User not found');
     const user = await this.userRepository.findOne({ where: { user_id: id } });
     if (!user) throw new NotFoundException('User not found');
+    
+    // Kiểm tra quyền xem:
+    // - ADMIN và STAFF: có thể xem bất kỳ user nào
+    // - CAR_RENTAL: chỉ được xem chính mình
+    if (currentUserId && id !== currentUserId) {
+      if (currentUserRole !== UserRole.ADMIN && currentUserRole !== UserRole.STAFF) {
+        throw new ForbiddenException('You can only view your own information');
+      }
+    }
+    
     return user;
   }
 
-  async update(id: number, userReqDto: UserReqDto): Promise<User> {
-    const user = await this.findOne(id);
+  async update(id: number, userReqDto: UserReqDto, currentUserRole?: UserRole, currentUserId?: number): Promise<User> {
+    // Kiểm tra quyền update:
+    // - ADMIN và STAFF: có thể update bất kỳ user nào
+    // - CAR_RENTAL: chỉ được update chính mình
+    if (currentUserId && id !== currentUserId) {
+      if (currentUserRole !== UserRole.ADMIN && currentUserRole !== UserRole.STAFF) {
+        throw new ForbiddenException('You can only update your own information');
+      }
+    }
+    
+    const user = await this.userRepository.findOne({ where: { user_id: id } });
+    if (!user) throw new NotFoundException('User not found');
     
     // Không cho phép sửa tài khoản admin mặc định
     if (user.email === 'admin@evs-rent.com') {
       throw new BadRequestException('Cannot modify default admin account');
+    }
+    
+    // Chỉ ADMIN mới được thay đổi role, nếu không phải ADMIN thì xóa role khỏi request
+    if (userReqDto.role && currentUserRole !== UserRole.ADMIN) {
+      delete userReqDto.role;
     }
     
     if (userReqDto.password) {
@@ -45,15 +70,27 @@ export class UserService {
       delete userReqDto.password;
     }
     
-    Object.assign(user, userReqDto);
+    // Chỉ update các field được cung cấp (email không được thay đổi)
+    if (userReqDto.first_name) user.first_name = userReqDto.first_name;
+    if (userReqDto.last_name) user.last_name = userReqDto.last_name;
+    if (userReqDto.password) user.password = userReqDto.password;
+    if (userReqDto.role) user.role = userReqDto.role;
+    
     return this.userRepository.save(user);
   }
 
-  async remove(id: number): Promise<void> {
-    const user = await this.findOne(id);
+  async remove(id: number, currentUserRole?: UserRole): Promise<void> {
+    const user = await this.userRepository.findOne({ where: { user_id: id } });
+    if (!user) throw new NotFoundException('User not found');
     
-    if (user.email === 'admin@evs-rent.com') {
-      throw new BadRequestException('Cannot delete default admin account');
+    // Không cho phép xóa tài khoản ADMIN
+    if (user.role === UserRole.ADMIN) {
+      throw new BadRequestException('Cannot delete admin account');
+    }
+    
+    // Nếu target user là STAFF, chỉ ADMIN mới được xóa
+    if (user.role === UserRole.STAFF && currentUserRole && currentUserRole !== UserRole.ADMIN) {
+      throw new BadRequestException('Only admin can delete staff accounts');
     }
     
     await this.userRepository.remove(user);
@@ -70,7 +107,7 @@ export class UserService {
       password: hashedPassword,
       first_name: userReqDto.first_name,
       last_name: userReqDto.last_name,
-      role: userReqDto.role,
+      role: userReqDto.role || UserRole.CAR_RENTAL,
     });
     return await this.userRepository.save(user);
   }
@@ -97,7 +134,7 @@ export class UserService {
           <div style="text-align: center;">
             <h2 style="color: #d32f2f;">Chào mừng bạn!</h2>
           </div>
-          <p>Xin chào <b>${registerDto.first_name} ${registerDto.last_name}</b>,</p>
+          <p>Xin chào <b>${registerDto.last_name} ${registerDto.first_name}</b>,</p>
           <p>Cảm ơn bạn đã đăng ký tài khoản.</p>
           <p>Vui lòng nhấn vào nút bên dưới để xác nhận đăng ký:</p>
           <div style="text-align: center; margin: 24px 0;">

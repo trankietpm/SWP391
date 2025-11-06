@@ -1,4 +1,5 @@
-import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, UseGuards, ForbiddenException } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Param, Body, ParseIntPipe, UseGuards, ForbiddenException, Res } from '@nestjs/common';
+import { Response } from 'express';
 import { UserService } from './user.service';
 import { UserReqDto } from './dtos/user-req.dto';
 import { UserResDto } from './dtos/user-res.dto';
@@ -29,52 +30,42 @@ export class UserController {
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() currentUser: User,
   ): Promise<UserResDto> {
-    // User có thể xem thông tin của chính mình hoặc có role phù hợp
-    if (id !== currentUser.user_id && 
-        !['admin', 'staff'].includes(currentUser.role)) {
-      throw new ForbiddenException('You can only view your own information');
-    }
-    return this.userService.findOne(id);
+    return this.userService.findOne(id, currentUser.role, currentUser.user_id);
   }
 
   @Put(':id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.STAFF, UserRole.CAR_RENTAL)
   async update(
     @Param('id', ParseIntPipe) id: number,
     @Body() userReqDto: UserReqDto,
     @CurrentUser() currentUser: User,
   ): Promise<UserResDto> {
-    // User có thể sửa thông tin của chính mình hoặc là ADMIN
-    if (id !== currentUser.user_id && currentUser.role !== UserRole.ADMIN) {
-      throw new ForbiddenException('You can only update your own information');
-    }
-    
-    // User không thể tự thay đổi role của mình
-    if (id === currentUser.user_id && userReqDto.role && userReqDto.role !== currentUser.role) {
-      throw new ForbiddenException('You cannot change your own role');
-    }
-    
-    return this.userService.update(id, userReqDto);
+    return this.userService.update(id, userReqDto, currentUser.role, currentUser.user_id);
   }
 
   @Delete(':id')
-  @Roles(UserRole.ADMIN)
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
   async remove(
     @Param('id', ParseIntPipe) id: number,
     @CurrentUser() currentUser: User,
   ): Promise<{ message: string }> {
-    // Không cho phép xóa chính mình
-    if (id === currentUser.user_id) {
-      throw new ForbiddenException('You cannot delete your own account');
-    }
-    
-    await this.userService.remove(id);
+    await this.userService.remove(id, currentUser.role);
     return { message: 'User deleted successfully' };
   }
 
-  @Post()
+  @Post('car_rental')
+  @Roles(UserRole.ADMIN, UserRole.STAFF)
+  async createCarRental(@Body() userReqDto: UserReqDto): Promise<UserResDto> {
+    // Tự động gán role CAR_RENTAL
+    userReqDto.role = UserRole.CAR_RENTAL;
+    return this.userService.create(userReqDto);
+  }
+
+  @Post('staff')
   @Roles(UserRole.ADMIN)
-  async create(@Body() userReqDto: UserReqDto): Promise<UserResDto> {
+  async createStaff(@Body() userReqDto: UserReqDto): Promise<UserResDto> {
+    // Tự động gán role STAFF
+    userReqDto.role = UserRole.STAFF;
     return this.userService.create(userReqDto);
   }
 
@@ -86,11 +77,15 @@ export class UserController {
 
   @Get('confirm/:token')
   @Public()
-  async confirmRegister(@Param('token') token: string) {
+  async confirmRegister(@Param('token') token: string, @Res() res: Response) {
     try {
-      return await this.userService.confirmRegister(token);
-    } catch (error) {
-      throw error;
+      await this.userService.confirmRegister(token);
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      return res.redirect(`${frontendUrl}/sign-in?confirmed=true`);
+    } catch (error: any) {
+      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const errorMessage = encodeURIComponent(error.message || 'Xác nhận thất bại');
+      return res.redirect(`${frontendUrl}/sign-in?error=${errorMessage}`);
     }
   }
 
