@@ -1,23 +1,20 @@
 "use client";
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { 
   PlusOutlined, 
   EditOutlined, 
   DeleteOutlined, 
   EyeOutlined,
   SearchOutlined,
-  FilterOutlined,
   UserOutlined
 } from '@ant-design/icons';
-import { mockUsers, User } from '../../data/users';
+import { userService, User } from '../../services/user.service';
 import styles from './UserManagement.module.scss';
 
 const UserManagement: React.FC = () => {
-  // Filter only renter users
-  const allUsers = mockUsers.filter(user => user.role === 'renter');
-  const [users, setUsers] = useState<User[]>(allUsers);
+  const [users, setUsers] = useState<User[]>([]);
+  const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [filterStatus, setFilterStatus] = useState('all');
   const [showModal, setShowModal] = useState(false);
   const [editingUser, setEditingUser] = useState<User | null>(null);
   const [showViewModal, setShowViewModal] = useState(false);
@@ -25,13 +22,32 @@ const UserManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
 
+  useEffect(() => {
+    fetchUsers();
+  }, []);
+
+  const fetchUsers = async () => {
+    try {
+      setLoading(true);
+      const apiUsers = await userService.getAllUsers();
+      // Filter only CAR_RENTAL users
+      const carRentalUsers = apiUsers.filter(u => u.role?.toUpperCase() === 'CAR_RENTAL');
+      setUsers(carRentalUsers);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const getUserDisplayName = (user: User): string => {
+    return `${user.last_name} ${user.first_name}`.trim() || user.email;
+  };
+
   const filteredUsers = users.filter(user => {
-    const matchesSearch = 
-      user.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      user.phone.includes(searchTerm);
-    const matchesStatus = filterStatus === 'all' || user.status === filterStatus;
-    return matchesSearch && matchesStatus;
+    const displayName = getUserDisplayName(user);
+    return displayName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+           user.email.toLowerCase().includes(searchTerm.toLowerCase());
   });
 
   const totalPages = Math.ceil(filteredUsers.length / itemsPerPage);
@@ -39,9 +55,19 @@ const UserManagement: React.FC = () => {
   const endIndex = startIndex + itemsPerPage;
   const currentUsers = filteredUsers.slice(startIndex, endIndex);
 
-  const handleDelete = (id: number) => {
+  const handleDelete = async (id: number) => {
     if (confirm('Bạn có chắc chắn muốn xóa người dùng này?')) {
-      setUsers(users.filter(user => user.id !== id));
+      try {
+        const success = await userService.deleteUser(id);
+        if (success) {
+          setUsers(users.filter(user => user.user_id !== id));
+        } else {
+          alert('Không thể xóa người dùng');
+        }
+      } catch (error) {
+        console.error('Error deleting user:', error);
+        alert('Có lỗi xảy ra khi xóa người dùng');
+      }
     }
   };
 
@@ -55,18 +81,61 @@ const UserManagement: React.FC = () => {
     setShowModal(true);
   };
 
+  const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
+    e.preventDefault();
+    const form = e.currentTarget;
+    const formData = new FormData(form);
+    
+    try {
+      if (editingUser) {
+        // Update user
+        const updateData = {
+          first_name: (formData.get('first_name') as string || '').trim(),
+          last_name: (formData.get('last_name') as string || '').trim(),
+          ...(formData.get('password') && { password: formData.get('password') as string }),
+        };
+        
+        await userService.updateUser(editingUser.user_id, updateData);
+        await fetchUsers();
+        setShowModal(false);
+        setEditingUser(null);
+      } else {
+        // Create new car rental user
+        const newUser = {
+          email: (formData.get('email') as string || '').trim(),
+          password: formData.get('password') as string,
+          first_name: (formData.get('first_name') as string || '').trim(),
+          last_name: (formData.get('last_name') as string || '').trim(),
+        };
+        
+        await userService.createCarRentalUser(newUser);
+        await fetchUsers();
+        setShowModal(false);
+      }
+    } catch (error) {
+      console.error('Error saving user:', error);
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { data?: { message?: string } } };
+        alert(axiosError.response?.data?.message || 'Có lỗi xảy ra khi lưu người dùng');
+      } else {
+        alert('Có lỗi xảy ra khi lưu người dùng');
+      }
+    }
+  };
+
   const handleView = (user: User) => {
     setViewingUser(user);
     setShowViewModal(true);
   };
 
-  const toggleStatus = (id: number) => {
-    setUsers(users.map(user => 
-      user.id === id 
-        ? { ...user, status: user.status === 'active' ? 'inactive' : 'active' }
-        : user
-    ));
-  };
+
+  if (loading) {
+    return (
+      <div className={styles.userManagement}>
+        <div style={{ padding: '20px', textAlign: 'center' }}>Đang tải dữ liệu...</div>
+      </div>
+    );
+  }
 
   return (
     <div className={styles.userManagement}>
@@ -83,23 +152,10 @@ const UserManagement: React.FC = () => {
           <SearchOutlined />
           <input
             type="text"
-            placeholder="Tìm kiếm theo tên, email, số điện thoại..."
+            placeholder="Tìm kiếm theo tên, email..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
           />
-        </div>
-        
-        
-        <div className={styles.filterBox}>
-          <FilterOutlined />
-          <select
-            value={filterStatus}
-            onChange={(e) => setFilterStatus(e.target.value)}
-          >
-            <option value="all">Tất cả trạng thái</option>
-            <option value="active">Hoạt động</option>
-            <option value="inactive">Không hoạt động</option>
-          </select>
         </div>
       </div>
 
@@ -109,55 +165,39 @@ const UserManagement: React.FC = () => {
             <tr>
               <th>ID</th>
               <th>Thông tin</th>
-              <th>Liên hệ</th>
+              <th>Email</th>
               <th>Vai trò</th>
-              <th>Trạng thái</th>
               <th>Ngày tham gia</th>
-              <th>Đăng nhập cuối</th>
               <th>Thao tác</th>
             </tr>
           </thead>
           <tbody>
             {currentUsers.map((user) => (
-              <tr key={user.id}>
-                <td>{user.id}</td>
+              <tr key={user.user_id}>
+                <td>{user.user_id}</td>
                 <td>
                   <div className={styles.userInfo}>
                     <div className={styles.avatar}>
                       <UserOutlined />
                     </div>
                     <div>
-                      <div className={styles.userName}>{user.name}</div>
+                      <div className={styles.userName}>{getUserDisplayName(user)}</div>
                     </div>
                   </div>
                 </td>
                 <td>
                   <div className={styles.contactInfo}>
                     <div className={styles.email}>{user.email}</div>
-                    <div className={styles.phone}>{user.phone}</div>
                   </div>
                 </td>
                 <td>
-                  <span className={`${styles.roleTag} ${
-                    user.role === 'admin' ? styles.admin : 
-                    user.role === 'staff' ? styles.staff : 
-                    styles.renter
-                  }`}>
-                    {user.role === 'admin' ? 'Admin' : 
-                     user.role === 'staff' ? 'Staff' : 
-                     'Renter'}
+                  <span className={`${styles.roleTag} ${styles.renter}`}>
+                    Người thuê
                   </span>
                 </td>
-                <td>
-                  <button 
-                    className={`${styles.statusBtn} ${user.status === 'active' ? styles.active : styles.inactive}`}
-                    onClick={() => toggleStatus(user.id)}
-                  >
-                    {user.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}
-                  </button>
+                <td className={styles.joinDate}>
+                  {new Date(user.date_created).toLocaleDateString('vi-VN')}
                 </td>
-                <td className={styles.joinDate}>{user.joinDate}</td>
-                <td className={styles.lastLogin}>{user.lastLogin}</td>
                 <td>
                   <div className={styles.actions}>
                     <button 
@@ -176,7 +216,7 @@ const UserManagement: React.FC = () => {
                     </button>
                     <button 
                       className={styles.deleteBtn}
-                      onClick={() => handleDelete(user.id)}
+                      onClick={() => handleDelete(user.user_id)}
                       title="Xóa"
                     >
                       <DeleteOutlined />
@@ -247,109 +287,67 @@ const UserManagement: React.FC = () => {
 
       {/* Modal for Add/Edit User */}
       {showModal && (
-        <div className={styles.modal}>
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
               <h2>{editingUser ? 'Chỉnh sửa người dùng' : 'Thêm người dùng mới'}</h2>
+              <button 
+                className={styles.closeBtn}
+                onClick={() => setShowModal(false)}
+              >
+                ×
+              </button>
             </div>
             
             <div className={styles.modalBody}>
-              <form className={styles.form}>
+              <form id="user-form" className={styles.form} onSubmit={handleSubmit}>
                 <div className={styles.formRow}>
                   <div className={styles.formGroup}>
-                    <label>Họ và tên</label>
+                    <label>Họ *</label>
                     <input 
                       type="text" 
-                      defaultValue={editingUser?.name || ''}
-                      placeholder="Nhập họ và tên"
+                      name="last_name"
+                      defaultValue={editingUser?.last_name || ''}
+                      placeholder="Nhập họ (ví dụ: Nguyễn)"
+                      required
                     />
                   </div>
                   
                   <div className={styles.formGroup}>
-                    <label>Email</label>
+                    <label>Tên *</label>
+                    <input 
+                      type="text" 
+                      name="first_name"
+                      defaultValue={editingUser?.first_name || ''}
+                      placeholder="Nhập tên (ví dụ: Văn A)"
+                      required
+                    />
+                  </div>
+                </div>
+                
+                <div className={styles.formRow}>
+                  <div className={styles.formGroup}>
+                    <label>Email *</label>
                     <input 
                       type="email" 
+                      name="email"
                       defaultValue={editingUser?.email || ''}
                       placeholder="Nhập email"
-                    />
-                  </div>
-                </div>
-                
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Số điện thoại</label>
-                    <input 
-                      type="tel" 
-                      defaultValue={editingUser?.phone || ''}
-                      placeholder="Nhập số điện thoại"
+                      required={!editingUser}
+                      disabled={!!editingUser}
                     />
                   </div>
                   
                   <div className={styles.formGroup}>
-                    <label>Vai trò</label>
-                    <select defaultValue={editingUser?.role || ''}>
-                      <option value="">Chọn vai trò</option>
-                      <option value="admin">Admin</option>
-                      <option value="staff">Staff</option>
-                      <option value="renter">Renter</option>
-                    </select>
-                  </div>
-                </div>
-                
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Trạng thái</label>
-                    <select defaultValue={editingUser?.status || 'active'}>
-                      <option value="active">Hoạt động</option>
-                      <option value="inactive">Không hoạt động</option>
-                    </select>
-                  </div>
-                  
-                  <div className={styles.formGroup}>
-                    <label>CMND/CCCD</label>
+                    <label>Mật khẩu {!editingUser && '*'}</label>
                     <input 
-                      type="text" 
-                      defaultValue={editingUser?.idCard || ''}
-                      placeholder="Nhập số CMND/CCCD"
+                      type="password" 
+                      name="password"
+                      placeholder={editingUser ? "Để trống nếu không đổi mật khẩu" : "Nhập mật khẩu (tối thiểu 8 ký tự)"}
+                      required={!editingUser}
+                      minLength={8}
                     />
                   </div>
-                </div>
-                
-                <div className={styles.formRow}>
-                  <div className={styles.formGroup}>
-                    <label>Số bằng lái xe</label>
-                    <input 
-                      type="text" 
-                      defaultValue={editingUser?.licenseNumber || ''}
-                      placeholder="Nhập số bằng lái xe"
-                    />
-                  </div>
-                  
-                  <div className={styles.formGroup}>
-                    <label>Ngày tham gia</label>
-                    <input 
-                      type="date" 
-                      defaultValue={editingUser?.joinDate || ''}
-                    />
-                  </div>
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label>Địa chỉ</label>
-                  <textarea 
-                    defaultValue={editingUser?.address || ''}
-                    placeholder="Nhập địa chỉ"
-                    rows={2}
-                  />
-                </div>
-                
-                <div className={styles.formGroup}>
-                  <label>Ghi chú</label>
-                  <textarea 
-                    defaultValue={editingUser?.notes || ''}
-                    placeholder="Nhập ghi chú về người dùng"
-                    rows={3}
-                  />
                 </div>
               </form>
             </div>
@@ -362,7 +360,11 @@ const UserManagement: React.FC = () => {
               >
                 Hủy
               </button>
-              <button type="submit" className={styles.saveBtn}>
+              <button 
+                type="submit" 
+                className={styles.saveBtn}
+                form="user-form"
+              >
                 {editingUser ? 'Cập nhật' : 'Thêm mới'}
               </button>
             </div>
@@ -372,10 +374,16 @@ const UserManagement: React.FC = () => {
 
       {/* View User Modal */}
       {showViewModal && viewingUser && (
-        <div className={styles.modal}>
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
-              <h2>Chi tiết người dùng: {viewingUser.name}</h2>
+              <h2>Chi tiết người dùng: {getUserDisplayName(viewingUser)}</h2>
+              <button 
+                className={styles.closeBtn}
+                onClick={() => setShowViewModal(false)}
+              >
+                ×
+              </button>
             </div>
             
             <div className={styles.modalBody}>
@@ -385,64 +393,22 @@ const UserManagement: React.FC = () => {
                   <div className={styles.viewGrid}>
                     <div className={styles.viewItem}>
                       <label>Họ và tên:</label>
-                      <span>{viewingUser.name}</span>
+                      <span>{getUserDisplayName(viewingUser)}</span>
                     </div>
                     <div className={styles.viewItem}>
                       <label>Email:</label>
                       <span>{viewingUser.email}</span>
                     </div>
                     <div className={styles.viewItem}>
-                      <label>Số điện thoại:</label>
-                      <span>{viewingUser.phone}</span>
-                    </div>
-                    <div className={styles.viewItem}>
                       <label>Vai trò:</label>
-                      <span>{viewingUser.role === 'admin' ? 'Admin' : 
-                             viewingUser.role === 'staff' ? 'Staff' : 
-                             'Renter'}</span>
-                    </div>
-                    <div className={styles.viewItem}>
-                      <label>Trạng thái:</label>
-                      <span>{viewingUser.status === 'active' ? 'Hoạt động' : 'Không hoạt động'}</span>
+                      <span>Người thuê</span>
                     </div>
                     <div className={styles.viewItem}>
                       <label>Ngày tham gia:</label>
-                      <span>{viewingUser.joinDate}</span>
+                      <span>{new Date(viewingUser.date_created).toLocaleDateString('vi-VN')}</span>
                     </div>
                   </div>
                 </div>
-
-                <div className={styles.viewSection}>
-                  <h3>Thông tin bổ sung</h3>
-                  <div className={styles.viewGrid}>
-                    <div className={styles.viewItem}>
-                      <label>CMND/CCCD:</label>
-                      <span>{viewingUser.idCard || 'Chưa cập nhật'}</span>
-                    </div>
-                    <div className={styles.viewItem}>
-                      <label>Số bằng lái xe:</label>
-                      <span>{viewingUser.licenseNumber || 'Chưa cập nhật'}</span>
-                    </div>
-                    <div className={styles.viewItem}>
-                      <label>Đăng nhập cuối:</label>
-                      <span>{viewingUser.lastLogin}</span>
-                    </div>
-                  </div>
-                </div>
-
-                {viewingUser.address && (
-                  <div className={styles.viewSection}>
-                    <h3>Địa chỉ</h3>
-                    <p>{viewingUser.address}</p>
-                  </div>
-                )}
-
-                {viewingUser.notes && (
-                  <div className={styles.viewSection}>
-                    <h3>Ghi chú</h3>
-                    <p>{viewingUser.notes}</p>
-                  </div>
-                )}
               </div>
             </div>
             

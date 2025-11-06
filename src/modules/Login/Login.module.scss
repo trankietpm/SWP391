@@ -1,0 +1,63 @@
+.container {
+  position: relative;
+}
+
+.notification {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  padding: 16px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 1000;
+  max-width: 400px;
+  animation: slideIn 0.3s ease-out;
+}
+
+.notificationContent {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.notificationIcon {
+  width: 24px;
+  height: 24px;
+  flex-shrink: 0;
+}
+
+.notificationText {
+  flex: 1;
+}
+
+.notificationTitle {
+  font-weight: bold;
+  display: block;
+}
+
+.notificationMessage {
+  font-size: 14px;
+  margin-top: 4px;
+}
+
+.successNotification {
+  background-color: #52c41a;
+  color: white;
+}
+
+.errorNotification {
+  background-color: #ff4d4f;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+

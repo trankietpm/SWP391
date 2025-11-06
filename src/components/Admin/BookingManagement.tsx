@@ -312,10 +312,16 @@ const BookingManagement: React.FC = () => {
 
       {/* Modal for Add/Edit Booking */}
       {showModal && (
-        <div className={styles.modal}>
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
               <h2>{editingBooking ? 'Chỉnh sửa đơn đặt' : 'Thêm đơn đặt mới'}</h2>
+              <button 
+                className={styles.closeBtn}
+                onClick={() => setShowModal(false)}
+              >
+                ×
+              </button>
             </div>
             
             <div className={styles.modalBody}>
@@ -443,7 +449,15 @@ const BookingManagement: React.FC = () => {
               >
                 Hủy
               </button>
-              <button type="submit" className={styles.saveBtn}>
+              <button 
+                type="button" 
+                className={styles.saveBtn}
+                onClick={(e) => {
+                  e.preventDefault();
+                  const form = document.querySelector('form') as HTMLFormElement;
+                  if (form) form.requestSubmit();
+                }}
+              >
                 {editingBooking ? 'Cập nhật' : 'Thêm mới'}
               </button>
             </div>
@@ -453,10 +467,16 @@ const BookingManagement: React.FC = () => {
 
       {/* View Booking Modal */}
       {showViewModal && viewingBooking && (
-        <div className={styles.modal}>
+        <div className={styles.modalOverlay}>
           <div className={styles.modalContent}>
             <div className={styles.modalHeader}>
               <h2>Chi tiết đơn đặt: #{viewingBooking.id}</h2>
+              <button 
+                className={styles.closeBtn}
+                onClick={() => setShowViewModal(false)}
+              >
+                ×
+              </button>
             </div>
             
             <div className={styles.modalBody}>

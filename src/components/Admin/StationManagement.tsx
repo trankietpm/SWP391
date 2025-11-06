@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { PlusOutlined, EditOutlined, DeleteOutlined, EyeOutlined, SearchOutlined, FilterOutlined, EnvironmentOutlined, PhoneOutlined, MailOutlined, UserOutlined, ClockCircleOutlined, CheckCircleOutlined, ExclamationCircleOutlined, CloseCircleOutlined, LoadingOutlined } from '@ant-design/icons';
 import { Station } from '../../data/stations';
 import { stationService } from '../../services/station.service';
-import { carService } from '../../services/car.service';
+import { vehicleService } from '../../services/vehicle.service';
 import styles from './StationManagement.module.scss';
 
 const StationManagement: React.FC = () => {
@@ -125,8 +125,8 @@ const StationManagement: React.FC = () => {
       status: station.status,
       openingHours: station.openingHours,
       services: [...station.services],
-      lat: station.lat,
-      lng: station.lng,
+      lat: Number(station.lat) || 0,
+      lng: Number(station.lng) || 0,
       description: station.description
     });
     setShowModal(true);
@@ -141,25 +141,32 @@ const StationManagement: React.FC = () => {
     try {
       setLoading(true);
       const apiStations = await stationService.getAllStations();
-      const mappedStations: Station[] = apiStations.map(station => ({
-        id: station.id,
-        name: station.name,
-        address: station.address,
-        city: station.city,
-        district: station.district,
-        phone: station.phone,
-        email: station.email,
-        manager: station.manager,
-        capacity: station.capacity,
-        lat: station.lat,
-        lng: station.lng,
-        status: station.status as 'active' | 'inactive' | 'maintenance',
-        openingHours: station.openingHours,
-        services: station.services || [],
-        description: station.description || '',
-        createdAt: station.date_created?.split('T')[0] || new Date().toISOString().split('T')[0],
-        updatedAt: station.date_created?.split('T')[0] || new Date().toISOString().split('T')[0]
-      }));
+      const mappedStations: Station[] = apiStations.map(station => {
+        const dateStr = typeof station.date_created === 'string' 
+          ? station.date_created 
+          : new Date().toISOString();
+        const dateFormatted = dateStr.split('T')[0];
+        
+        return {
+          id: station.id,
+          name: station.name,
+          address: station.address,
+          city: station.city,
+          district: station.district,
+          phone: station.phone,
+          email: station.email,
+          manager: station.manager,
+          capacity: station.capacity,
+          lat: Number(station.lat) || 0,
+          lng: Number(station.lng) || 0,
+          status: station.status as 'active' | 'inactive' | 'maintenance',
+          openingHours: station.openingHours,
+          services: station.services || [],
+          description: station.description || '',
+          createdAt: dateFormatted,
+          updatedAt: dateFormatted
+        };
+      });
       setStations(mappedStations);
       setFilteredStations(mappedStations);
     } catch (error) {
@@ -303,8 +310,8 @@ const StationManagement: React.FC = () => {
     useEffect(() => {
       const fetchCount = async () => {
         try {
-          const vehicles = await carService.getCarsByStation(stationId);
-          const total = vehicles.reduce((sum, v) => sum + (v.availableCount || 0), 0);
+          const vehicles = await vehicleService.getVehiclesByStation(stationId);
+          const total = vehicles.length; 
           setCount(total);
         } catch (error) {
           console.error('Error fetching vehicle count:', error);
@@ -322,8 +329,8 @@ const StationManagement: React.FC = () => {
     useEffect(() => {
       const fetchRatio = async () => {
         try {
-          const vehicles = await carService.getCarsByStation(stationId);
-          const total = vehicles.reduce((sum, v) => sum + (v.availableCount || 0), 0);
+          const vehicles = await vehicleService.getVehiclesByStation(stationId);
+          const total = vehicles.length; // Đếm tất cả xe (available, rented, maintenance)
           setRatio(Math.round((total / capacity) * 100));
         } catch (error) {
           console.error('Error fetching usage ratio:', error);
@@ -338,9 +345,11 @@ const StationManagement: React.FC = () => {
   if (loading) {
     return (
       <div className={styles.container}>
-        <div style={{ textAlign: 'center', padding: '50px' }}>
-          <LoadingOutlined style={{ fontSize: 48 }} />
-          <p>Đang tải dữ liệu...</p>
+        <div className={styles.stationManagement}>
+          <div style={{ textAlign: 'center', padding: '50px' }}>
+            <LoadingOutlined style={{ fontSize: 48 }} />
+            <p>Đang tải dữ liệu...</p>
+          </div>
         </div>
       </div>
     );
@@ -348,7 +357,8 @@ const StationManagement: React.FC = () => {
 
   return (
     <div className={styles.container}>
-      <div className={styles.header}>
+      <div className={styles.stationManagement}>
+        <div className={styles.header}>
         <h1>Quản lý trạm thuê xe</h1>
         <button className={styles.addBtn} onClick={handleAdd}>
           <PlusOutlined />
@@ -419,7 +429,7 @@ const StationManagement: React.FC = () => {
                   <div className={styles.addressInfo}>
                     <div>{station.address}</div>
                     <div className={styles.coordinates}>
-                      {station.lat.toFixed(4)}, {station.lng.toFixed(4)}
+                      {Number(station.lat).toFixed(4)}, {Number(station.lng).toFixed(4)}
                     </div>
                   </div>
                 </td>
@@ -492,7 +502,8 @@ const StationManagement: React.FC = () => {
       </div>
 
       {/* Pagination */}
-      <div className={styles.pagination}>
+      {totalPages > 1 && (
+        <div className={styles.pagination}>
         <div className={styles.paginationInfo}>
           Hiển thị {startIndex + 1}-{Math.min(endIndex, filteredStations.length)} trong {filteredStations.length} trạm
         </div>
@@ -538,6 +549,7 @@ const StationManagement: React.FC = () => {
           </button>
         </div>
       </div>
+      )}
 
       {/* Add/Edit Modal */}
       {showModal && (
@@ -865,6 +877,7 @@ const StationManagement: React.FC = () => {
           </div>
         </div>
       )}
+      </div>
     </div>
   );
 };

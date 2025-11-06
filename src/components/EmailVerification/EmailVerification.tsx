@@ -23,23 +23,25 @@ const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onVerify, 
           <img src="/images/back.png" alt="Quay lại" className={styles.backIcon} />
         </button>
 
-        <h1 className={styles.title}>Đăng ký thành công!</h1>
+        <h1 className={styles.title}>Vui lòng kiểm tra email</h1>
         
         <p className={styles.description}>
-          Chúc mừng! Tài khoản của bạn đã được tạo thành công. Bây giờ bạn có thể đăng nhập vào tài khoản.
+          Chúng tôi đã gửi email xác nhận đến địa chỉ <b>{email}</b>.
+          <br />
+          Vui lòng kiểm tra hộp thư và nhấn vào link xác nhận để hoàn tất đăng ký.
         </p>
 
         <div className={styles.successSection}>
           <div className={styles.successIcon}>
             <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14"></path>
-              <polyline points="22,4 12,14.01 9,11.01"></polyline>
+              <path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z"></path>
+              <polyline points="22,6 12,13 2,6"></polyline>
             </svg>
           </div>
           
-          <button type="button" onClick={handleLogin} className={styles.verifyButton}>
-            Đăng nhập ngay
-          </button>
+          <p style={{ marginTop: '16px', color: '#666', fontSize: '14px' }}>
+            Sau khi xác nhận email, bạn có thể quay lại đăng nhập.
+          </p>
         </div>
 
       </div>

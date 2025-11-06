@@ -38,6 +38,12 @@ const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
       href: '/admin/stations'
     },
     {
+      key: '/admin/vehicle-models',
+      icon: <CarOutlined />,
+      label: 'Quản lý mẫu xe',
+      href: '/admin/vehicle-models'
+    },
+    {
       key: '/admin/vehicles',
       icon: <CarOutlined />,
       label: 'Quản lý xe',
