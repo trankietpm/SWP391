@@ -1,11 +1,10 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8055';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3123';
 
 export interface Station {
   id: number;
   status: string;
-  user_created: string;
   date_created: string;
   name: string;
   address: string;
@@ -17,67 +16,55 @@ export interface Station {
   lng: number;
   openingHours: string;
   services: string[];
-  description: string;
+  description?: string;
   city: string;
   district: string;
 }
 
-export interface StationResponse {
-  data: Station;
-}
-
-export interface StationsResponse {
-  data: Station[];
-}
-
 export const stationService = {
+  // Get auth headers
+  getAuthHeaders(): Record<string, string> {
+    const token = typeof window !== 'undefined' ? localStorage.getItem('token') : null;
+    const headers: Record<string, string> = {
+      'Content-Type': 'application/json',
+    };
+    if (token) {
+      headers['Authorization'] = `Bearer ${token}`;
+    }
+    return headers;
+  },
+
   async getStationById(id: number): Promise<Station | undefined> {
     try {
-      const response = await axios.get<StationResponse>(`${API_BASE_URL}/items/Station/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      const response = await axios.get<Station>(`${API_BASE_URL}/station/${id}`, {
+        headers: this.getAuthHeaders(),
       });
-      return response.data.data;
+      return response.data;
     } catch {
       return undefined;
     }
   },
 
   async getAllStations(): Promise<Station[]> {
-    const response = await axios.get<StationsResponse>(`${API_BASE_URL}/items/Station`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+    const response = await axios.get<Station[]>(`${API_BASE_URL}/station`, {
+      headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
   },
 
   async getActiveStations(): Promise<Station[]> {
-    const response = await axios.get<StationsResponse>(`${API_BASE_URL}/items/Station?filter[status][_eq]=active`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const allStations = await this.getAllStations();
+    return allStations.filter(station => station.status === 'active');
   },
 
   async getStationsByCity(city: string): Promise<Station[]> {
-    const response = await axios.get<StationsResponse>(`${API_BASE_URL}/items/Station?filter[city][_eq]=${encodeURIComponent(city)}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const allStations = await this.getAllStations();
+    return allStations.filter(station => station.city === city);
   },
 
   async getStationsByDistrict(district: string): Promise<Station[]> {
-    const response = await axios.get<StationsResponse>(`${API_BASE_URL}/items/Station?filter[district][_eq]=${encodeURIComponent(district)}`, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
-    });
-    return response.data.data;
+    const allStations = await this.getAllStations();
+    return allStations.filter(station => station.district === district);
   },
 
   calculateStationVehicles(stationId: number, allVehicles: { stationId: number }[]): number {
@@ -92,30 +79,24 @@ export const stationService = {
       .reduce((total, vehicle) => total + vehicle.availableCount, 0);
   },
 
-  async createStation(data: Omit<Station, 'id' | 'user_created' | 'date_created'>): Promise<Station> {
-    const response = await axios.post<StationResponse>(`${API_BASE_URL}/items/Station`, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  async createStation(data: Omit<Station, 'id' | 'date_created'>): Promise<Station> {
+    const response = await axios.post<Station>(`${API_BASE_URL}/station`, data, {
+      headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
   },
 
-  async updateStation(id: number, data: Partial<Omit<Station, 'id' | 'user_created' | 'date_created'>>): Promise<Station> {
-    const response = await axios.patch<StationResponse>(`${API_BASE_URL}/items/Station/${id}`, data, {
-      headers: {
-        'Content-Type': 'application/json',
-      },
+  async updateStation(id: number, data: Partial<Omit<Station, 'id' | 'date_created'>>): Promise<Station> {
+    const response = await axios.put<Station>(`${API_BASE_URL}/station/${id}`, data, {
+      headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
   },
 
   async deleteStation(id: number): Promise<boolean> {
     try {
-      await axios.delete(`${API_BASE_URL}/items/Station/${id}`, {
-        headers: {
-          'Content-Type': 'application/json',
-        },
+      await axios.delete(`${API_BASE_URL}/station/${id}`, {
+        headers: this.getAuthHeaders(),
       });
       return true;
     } catch {
