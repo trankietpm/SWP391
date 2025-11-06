@@ -73,11 +73,11 @@ function Navbar() {
           </li>
           <li>
             <Link 
-              href="/services" 
-              className={isActive('/services') ? styles.active : ''}
+              href="/map" 
+              className={isActive('/map') ? styles.active : ''}
               onClick={() => setIsMenuOpen(false)}
             >
-              Dịch vụ
+              Bản đồ
             </Link>
           </li>
           <li>
