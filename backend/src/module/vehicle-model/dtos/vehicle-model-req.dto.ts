@@ -50,10 +50,5 @@ export class VehicleModelReqDto {
   @IsArray()
   @IsString({ each: true })
   highlights: string[];
-
-  @IsArray()
-  @IsString({ each: true })
-  @IsOptional()
-  images?: string[];
 }
 

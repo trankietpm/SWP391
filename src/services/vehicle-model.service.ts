@@ -24,7 +24,6 @@ export interface VehicleModel {
   topSpeed: string;
   acceleration: string;
   highlights: string[];
-  images?: string[];
   date_created: string;
 }
 
@@ -65,7 +64,7 @@ export const vehicleModelService = {
   },
 
   async createVehicleModel(
-    data: Omit<VehicleModel, 'id' | 'date_created'> & { base64Images?: string[] }
+    data: Omit<VehicleModel, 'id' | 'date_created'>
   ): Promise<VehicleModel> {
     const response = await axios.post<VehicleModel>(`${API_BASE_URL}/vehicle-model`, data, {
       headers: this.getAuthHeaders(),
@@ -75,7 +74,7 @@ export const vehicleModelService = {
 
   async updateVehicleModel(
     id: number,
-    data: Partial<Omit<VehicleModel, 'id' | 'date_created'>> & { base64Images?: string[] }
+    data: Partial<Omit<VehicleModel, 'id' | 'date_created'>>
   ): Promise<VehicleModel> {
     const response = await axios.put<VehicleModel>(`${API_BASE_URL}/vehicle-model/${id}`, data, {
       headers: this.getAuthHeaders(),

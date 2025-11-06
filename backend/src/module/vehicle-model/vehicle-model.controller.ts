@@ -29,7 +29,7 @@ export class VehicleModelController {
 
   @Post()
   @Roles(UserRole.ADMIN, UserRole.STAFF)
-  async create(@Body() vehicleModelReqDto: VehicleModelReqDto & { base64Images?: string[] }): Promise<VehicleModelResDto> {
+  async create(@Body() vehicleModelReqDto: VehicleModelReqDto): Promise<VehicleModelResDto> {
     return this.vehicleModelService.create(vehicleModelReqDto);
   }
 
@@ -37,7 +37,7 @@ export class VehicleModelController {
   @Roles(UserRole.ADMIN, UserRole.STAFF)
   async update(
     @Param('id', ParseIntPipe) id: number,
-    @Body() vehicleModelReqDto: VehicleModelReqDto & { base64Images?: string[] },
+    @Body() vehicleModelReqDto: VehicleModelReqDto,
   ): Promise<VehicleModelResDto> {
     return this.vehicleModelService.update(id, vehicleModelReqDto);
   }

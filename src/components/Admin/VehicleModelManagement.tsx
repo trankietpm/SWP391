@@ -9,7 +9,7 @@ import {
   FilterOutlined,
   LoadingOutlined
 } from '@ant-design/icons';
-import { vehicleModelService, VehicleModel, getImageUrl } from '../../services/vehicle-model.service';
+import { vehicleModelService, VehicleModel } from '../../services/vehicle-model.service';
 import styles from './VehicleManagement.module.scss';
 
 const VehicleModelManagement: React.FC = () => {
@@ -27,9 +27,6 @@ const VehicleModelManagement: React.FC = () => {
   const [highlightInput, setHighlightInput] = useState('');
   const [formFeatures, setFormFeatures] = useState<string[]>([]);
   const [formHighlights, setFormHighlights] = useState<string[]>([]);
-  const [selectedImages, setSelectedImages] = useState<File[]>([]);
-  const [uploadingImages, setUploadingImages] = useState(false);
-  const [currentImages, setCurrentImages] = useState<string[]>([]);
 
   const [formData, setFormData] = useState({
     name: '',
@@ -108,8 +105,6 @@ const VehicleModelManagement: React.FC = () => {
     });
     setFormFeatures([]);
     setFormHighlights([]);
-    setSelectedImages([]);
-    setCurrentImages([]);
     setShowModal(true);
   };
 
@@ -131,8 +126,6 @@ const VehicleModelManagement: React.FC = () => {
     });
     setFormFeatures([...model.features]);
     setFormHighlights([...model.highlights]);
-    setSelectedImages([]);
-    setCurrentImages([...(model.images || [])]);
     setShowModal(true);
   };
 
@@ -141,34 +134,10 @@ const VehicleModelManagement: React.FC = () => {
     setShowViewModal(true);
   };
 
-  const convertFileToBase64 = (file: File): Promise<string> => {
-    return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.readAsDataURL(file);
-      reader.onload = () => resolve(reader.result as string);
-      reader.onerror = error => reject(error);
-    });
-  };
-
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault();
     
     try {
-      setUploadingImages(true);
-      
-      const base64Images: string[] = [];
-      if (selectedImages.length > 0) {
-        for (const image of selectedImages) {
-          try {
-            const base64 = await convertFileToBase64(image);
-            base64Images.push(base64);
-          } catch (error) {
-            console.error('Error converting image:', error);
-            alert(`Lỗi khi xử lý ảnh: ${image.name}`);
-          }
-        }
-      }
-
       const data = {
         name: formData.name,
         type: formData.type,
@@ -184,8 +153,6 @@ const VehicleModelManagement: React.FC = () => {
         acceleration: formData.acceleration,
         features: formFeatures,
         highlights: formHighlights,
-        images: currentImages,
-        ...(base64Images.length > 0 && { base64Images }),
       };
 
       if (editingModel) {
@@ -199,13 +166,9 @@ const VehicleModelManagement: React.FC = () => {
       setEditingModel(null);
       setFormFeatures([]);
       setFormHighlights([]);
-      setSelectedImages([]);
-      setCurrentImages([]);
     } catch (error) {
       console.error('Error saving model:', error);
       alert('Có lỗi xảy ra khi lưu mẫu xe');
-    } finally {
-      setUploadingImages(false);
     }
   };
 
@@ -229,10 +192,6 @@ const VehicleModelManagement: React.FC = () => {
 
   const removeHighlight = (highlight: string) => {
     setFormHighlights(formHighlights.filter(h => h !== highlight));
-  };
-
-  const handleRemoveCurrentImage = (indexToRemove: number) => {
-    setCurrentImages(currentImages.filter((_, index) => index !== indexToRemove));
   };
 
   if (loading) {
@@ -600,101 +559,6 @@ const VehicleModelManagement: React.FC = () => {
                   </div>
                 </div>
 
-                <div className={styles.formGroup}>
-                  <label>Ảnh mẫu xe</label>
-                  <input
-                    type="file"
-                    accept="image/*"
-                    multiple
-                    onChange={(e) => {
-                      if (e.target.files) {
-                        setSelectedImages(Array.from(e.target.files));
-                      }
-                    }}
-                    style={{ marginBottom: '10px' }}
-                  />
-                  {selectedImages.length > 0 && (
-                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
-                      {selectedImages.map((image, index) => (
-                        <div key={index} style={{ position: 'relative', width: '100px', height: '100px' }}>
-                          <img
-                            src={URL.createObjectURL(image)}
-                            alt={`Preview ${index}`}
-                            style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
-                          />
-                          <button
-                            type="button"
-                            onClick={() => setSelectedImages(selectedImages.filter((_, i) => i !== index))}
-                            style={{
-                              position: 'absolute',
-                              top: '-5px',
-                              right: '-5px',
-                              background: 'red',
-                              color: 'white',
-                              border: 'none',
-                              borderRadius: '50%',
-                              width: '20px',
-                              height: '20px',
-                              cursor: 'pointer'
-                            }}
-                          >
-                            ×
-                          </button>
-                        </div>
-                      ))}
-                    </div>
-                  )}
-                  {currentImages && currentImages.length > 0 && (
-                    <div style={{ marginTop: '10px' }}>
-                      <p style={{ marginBottom: '5px', fontSize: '12px', color: '#666' }}>Ảnh hiện tại:</p>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                        {currentImages.map((imgUrl, index) => (
-                          <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
-                            <img
-                              src={getImageUrl(imgUrl)}
-                              alt={`Current ${index}`}
-                              style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleRemoveCurrentImage(index)}
-                              style={{
-                                position: 'absolute',
-                                top: '-6px',
-                                right: '-6px',
-                                background: '#ff4d4f',
-                                color: 'white',
-                                border: 'none',
-                                borderRadius: '50%',
-                                width: '20px',
-                                height: '20px',
-                                cursor: 'pointer',
-                                fontSize: '12px',
-                                lineHeight: '1',
-                                display: 'flex',
-                                alignItems: 'center',
-                                justifyContent: 'center',
-                                boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
-                                transition: 'all 0.3s ease',
-                                padding: 0
-                              }}
-                              onMouseEnter={(e) => {
-                                e.currentTarget.style.background = '#ff7875';
-                                e.currentTarget.style.transform = 'scale(1.1)';
-                              }}
-                              onMouseLeave={(e) => {
-                                e.currentTarget.style.background = '#ff4d4f';
-                                e.currentTarget.style.transform = 'scale(1)';
-                              }}
-                            >
-                              ×
-                            </button>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-                  )}
-                </div>
               </form>
             </div>
             
@@ -712,9 +576,8 @@ const VehicleModelManagement: React.FC = () => {
                   const form = document.querySelector('form') as HTMLFormElement;
                   if (form) form.requestSubmit();
                 }}
-                disabled={uploadingImages}
               >
-                {uploadingImages ? 'Đang lưu...' : editingModel ? 'Cập nhật' : 'Thêm mới'}
+                {editingModel ? 'Cập nhật' : 'Thêm mới'}
               </button>
             </div>
           </div>
@@ -818,27 +681,6 @@ const VehicleModelManagement: React.FC = () => {
                   </div>
                 )}
 
-                <div className={styles.viewSection}>
-                  <h3>Ảnh mẫu xe</h3>
-                  {viewingModel.images && viewingModel.images.length > 0 ? (
-                    <div className={styles.imageGrid}>
-                      {viewingModel.images.map((imgUrl, index) => (
-                        <img
-                          key={index}
-                          src={getImageUrl(imgUrl)}
-                          alt={`${viewingModel.name} ${index + 1}`}
-                          className={styles.viewImage}
-                          onClick={() => window.open(getImageUrl(imgUrl), '_blank')}
-                          onError={(e) => {
-                            (e.target as HTMLImageElement).src = '/images/car.png';
-                          }}
-                        />
-                      ))}
-                    </div>
-                  ) : (
-                    <p className={styles.noImage}>Chưa có ảnh</p>
-                  )}
-                </div>
               </div>
             </div>
             

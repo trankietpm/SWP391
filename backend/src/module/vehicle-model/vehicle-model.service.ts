@@ -3,14 +3,12 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { VehicleModel } from './vehicle-model.entity';
 import { VehicleModelReqDto } from './dtos/vehicle-model-req.dto';
-import { VehicleModelUploadService } from './vehicle-model-upload.service';
 
 @Injectable()
 export class VehicleModelService {
   constructor(
     @InjectRepository(VehicleModel)
     private readonly vehicleModelRepository: Repository<VehicleModel>,
-    private readonly uploadService: VehicleModelUploadService,
   ) {}
 
   async findAll(): Promise<VehicleModel[]> {
@@ -28,31 +26,21 @@ export class VehicleModelService {
     return vehicleModel;
   }
 
-  async create(vehicleModelReqDto: VehicleModelReqDto & { base64Images?: string[] }): Promise<VehicleModel> {
+  async create(vehicleModelReqDto: VehicleModelReqDto): Promise<VehicleModel> {
     const existingName = await this.vehicleModelRepository.findOne({
       where: { name: vehicleModelReqDto.name },
     });
     if (existingName) throw new BadRequestException('Tên model đã tồn tại');
-
-    let images: string[] = vehicleModelReqDto.images || [];
-    
-    if (vehicleModelReqDto.base64Images && vehicleModelReqDto.base64Images.length > 0) {
-      const savedImages = this.uploadService.saveBase64Images(vehicleModelReqDto.name, vehicleModelReqDto.base64Images);
-      images = [...images, ...savedImages];
-    }
-
-    const { base64Images, ...dtoWithoutBase64 } = vehicleModelReqDto;
     
     const vehicleModel = this.vehicleModelRepository.create({
-      ...dtoWithoutBase64,
-      images,
+      ...vehicleModelReqDto,
       rating: vehicleModelReqDto.rating || 0,
       isPopular: vehicleModelReqDto.isPopular || false,
     });
     return await this.vehicleModelRepository.save(vehicleModel);
   }
 
-  async update(id: number, vehicleModelReqDto: VehicleModelReqDto & { base64Images?: string[] }): Promise<VehicleModel> {
+  async update(id: number, vehicleModelReqDto: VehicleModelReqDto): Promise<VehicleModel> {
     const vehicleModel = await this.findOne(id);
 
     if (vehicleModelReqDto.name && vehicleModelReqDto.name !== vehicleModel.name) {
@@ -61,32 +49,8 @@ export class VehicleModelService {
       });
       if (existingName) throw new BadRequestException('Tên model đã tồn tại');
     }
-
-    const oldImages: string[] = vehicleModel.images || [];
-    const newImages: string[] = vehicleModelReqDto.images || [];
     
-    // Find images that were removed (exist in old but not in new)
-    const removedImages = oldImages.filter(img => !newImages.includes(img));
-    
-    // Delete removed image files from server
-    if (removedImages.length > 0) {
-      this.uploadService.deleteImages(removedImages);
-    }
-
-    let images: string[] = newImages;
-    
-    if (vehicleModelReqDto.base64Images && vehicleModelReqDto.base64Images.length > 0) {
-      const modelName = vehicleModelReqDto.name || vehicleModel.name;
-      const savedImages = this.uploadService.saveBase64Images(modelName, vehicleModelReqDto.base64Images);
-      images = [...images, ...savedImages];
-    }
-
-    const { base64Images, ...dtoWithoutBase64 } = vehicleModelReqDto;
-    
-    Object.assign(vehicleModel, {
-      ...dtoWithoutBase64,
-      images,
-    });
+    Object.assign(vehicleModel, vehicleModelReqDto);
     return this.vehicleModelRepository.save(vehicleModel);
   }
 
@@ -101,11 +65,6 @@ export class VehicleModelService {
 
     if (parseInt(vehiclesCount.count) > 0) {
       throw new BadRequestException('Không thể xóa model có xe đang sử dụng');
-    }
-
-    // Delete all images before removing the model
-    if (vehicleModel.images && vehicleModel.images.length > 0) {
-      this.uploadService.deleteImages(vehicleModel.images);
     }
 
     await this.vehicleModelRepository.remove(vehicleModel);

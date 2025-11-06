@@ -1,5 +1,5 @@
 import { VehicleStatus } from '../../../enums/vehicle-status.enum';
-import { IsNumber, IsEnum, IsString, IsOptional, Min, Max } from 'class-validator';
+import { IsNumber, IsEnum, IsString, IsOptional, Min, Max, IsArray } from 'class-validator';
 
 export class VehicleReqDto {
   @IsNumber()
@@ -19,5 +19,15 @@ export class VehicleReqDto {
 
   @IsString()
   license_plate: string;
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  base64Images?: string[];
+
+  @IsArray()
+  @IsString({ each: true })
+  @IsOptional()
+  images?: string[];
 }
 

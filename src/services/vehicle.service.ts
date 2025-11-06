@@ -2,6 +2,12 @@ import axios from 'axios';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3123';
 
+export const getImageUrl = (imagePath: string): string => {
+  if (!imagePath) return '';
+  if (imagePath.startsWith('http')) return imagePath;
+  return `${API_BASE_URL}/${imagePath}`;
+};
+
 export interface Vehicle {
   id: number;
   vehicle_model_id: number;
@@ -9,13 +15,13 @@ export interface Vehicle {
   battery_status: number;
   status: 'available' | 'rented' | 'maintenance';
   license_plate: string;
+  images?: string[];
   date_created: string;
   vehicleModel?: {
     id: number;
     name: string;
     type: 'Xe máy điện' | 'Ô tô điện';
     price: number;
-    images?: string[];
   };
   station?: {
     id: number;
@@ -84,7 +90,9 @@ export const vehicleService = {
     return allVehicles.filter(vehicle => vehicle.status === 'maintenance');
   },
 
-  async createVehicle(data: Omit<Vehicle, 'id' | 'date_created' | 'vehicleModel' | 'station'>): Promise<Vehicle> {
+  async createVehicle(
+    data: Omit<Vehicle, 'id' | 'date_created' | 'vehicleModel' | 'station' | 'images'> & { base64Images?: string[] }
+  ): Promise<Vehicle> {
     const response = await axios.post<Vehicle>(`${API_BASE_URL}/vehicle`, data, {
       headers: this.getAuthHeaders(),
     });
@@ -93,7 +101,7 @@ export const vehicleService = {
 
   async updateVehicle(
     id: number,
-    data: Partial<Omit<Vehicle, 'id' | 'date_created' | 'vehicleModel' | 'station'>>
+    data: Partial<Omit<Vehicle, 'id' | 'date_created' | 'vehicleModel' | 'station' | 'images'>> & { base64Images?: string[]; images?: string[] }
   ): Promise<Vehicle> {
     const response = await axios.put<Vehicle>(`${API_BASE_URL}/vehicle/${id}`, data, {
       headers: this.getAuthHeaders(),

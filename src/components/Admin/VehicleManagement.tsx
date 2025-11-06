@@ -10,8 +10,8 @@ import {
   LoadingOutlined
 } from '@ant-design/icons';
 import { VehicleDetail } from '../../data/vehicles';
-import { vehicleService } from '../../services/vehicle.service';
-import { vehicleModelService, getImageUrl } from '../../services/vehicle-model.service';
+import { vehicleService, getImageUrl } from '../../services/vehicle.service';
+import { vehicleModelService } from '../../services/vehicle-model.service';
 import { stationService } from '../../services/station.service';
 import styles from './VehicleManagement.module.scss';
 
@@ -37,6 +37,9 @@ const VehicleManagement: React.FC = () => {
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 8;
   const [vehicleModels, setVehicleModels] = useState<{ id: number; name: string; type: string }[]>([]);
+  const [selectedImages, setSelectedImages] = useState<File[]>([]);
+  const [currentImages, setCurrentImages] = useState<string[]>([]);
+  const [uploadingImages, setUploadingImages] = useState(false);
 
   const fetchVehicles = async () => {
     try {
@@ -58,7 +61,7 @@ const VehicleManagement: React.FC = () => {
       
       const mappedVehicles: VehicleDetail[] = apiVehicles.map(vehicle => {
         const model = modelMap.get(vehicle.vehicle_model_id);
-        const imageUrls = model?.images?.map(img => getImageUrl(img)) || [];
+        const imageUrls = vehicle.images?.map(img => getImageUrl(img)) || [];
         
         detailsMap[vehicle.id] = {
           ...(vehicle.battery_status !== undefined && { batteryStatus: vehicle.battery_status }),
@@ -138,6 +141,8 @@ const VehicleManagement: React.FC = () => {
     try {
       const vehicleData = await vehicleService.getVehicleById(vehicle.id);
       setEditingVehicle(vehicle);
+      setCurrentImages([...(vehicleData.images || [])]);
+      setSelectedImages([]);
       setShowModal(true);
       // Set form values after modal opens
       setTimeout(() => {
@@ -166,7 +171,49 @@ const VehicleManagement: React.FC = () => {
 
   const handleAddNew = () => {
     setEditingVehicle(null);
+    setSelectedImages([]);
+    setCurrentImages([]);
     setShowModal(true);
+  };
+
+  const resizeImage = (file: File, maxWidth: number = 1200, maxHeight: number = 1200): Promise<string> => {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      reader.readAsDataURL(file);
+      reader.onload = (e) => {
+        const img = new Image();
+        img.src = e.target?.result as string;
+        img.onload = () => {
+          const canvas = document.createElement('canvas');
+          let width = img.width;
+          let height = img.height;
+
+          if (width > height) {
+            if (width > maxWidth) {
+              height = (height * maxWidth) / width;
+              width = maxWidth;
+            }
+          } else {
+            if (height > maxHeight) {
+              width = (width * maxHeight) / height;
+              height = maxHeight;
+            }
+          }
+
+          canvas.width = width;
+          canvas.height = height;
+          const ctx = canvas.getContext('2d');
+          ctx?.drawImage(img, 0, 0, width, height);
+          resolve(canvas.toDataURL('image/jpeg', 0.8));
+        };
+        img.onerror = reject;
+      };
+      reader.onerror = reject;
+    });
+  };
+
+  const handleRemoveCurrentImage = (indexToRemove: number) => {
+    setCurrentImages(currentImages.filter((_, index) => index !== indexToRemove));
   };
 
   const handleView = (vehicle: VehicleDetail) => {
@@ -191,14 +238,29 @@ const VehicleManagement: React.FC = () => {
     const formData = new FormData(form);
     
     try {
-      // VehicleManagement now only manages vehicle instances
-      // Note: Form needs to be updated to only include vehicle fields (not model fields)
+      setUploadingImages(true);
+      
+      const base64Images: string[] = [];
+      if (selectedImages.length > 0) {
+        for (const image of selectedImages) {
+          try {
+            const base64 = await resizeImage(image);
+            base64Images.push(base64);
+          } catch (error) {
+            console.error('Error processing image:', error);
+            alert(`Lỗi khi xử lý ảnh: ${image.name}`);
+          }
+        }
+      }
+
       const vehicleData = {
         vehicle_model_id: parseInt(formData.get('vehicle_model_id') as string) || 0,
         station_id: parseInt(formData.get('stationId') as string) || 0,
         battery_status: formData.get('battery_status') ? parseInt(formData.get('battery_status') as string) : 0,
         license_plate: (formData.get('license_plate') as string) || '',
         status: ((formData.get('status') as string)?.toLowerCase() || 'available') as 'available' | 'rented' | 'maintenance',
+        ...(base64Images.length > 0 && { base64Images }),
+        ...(editingVehicle && currentImages.length > 0 && { images: currentImages }),
       };
 
       if (editingVehicle) {
@@ -210,9 +272,13 @@ const VehicleManagement: React.FC = () => {
       await fetchVehicles();
       setShowModal(false);
       setEditingVehicle(null);
+      setSelectedImages([]);
+      setCurrentImages([]);
     } catch (error) {
       console.error('Error saving vehicle:', error);
       alert('Có lỗi xảy ra khi lưu xe');
+    } finally {
+      setUploadingImages(false);
     }
   };
 
@@ -476,15 +542,113 @@ const VehicleManagement: React.FC = () => {
                  </div>
                </div>
                
-               <div className={styles.formRow}>
-                 <div className={styles.formGroup}>
-                   <label>Trạng thái *</label>
-                   <select name="status" required>
-                     <option value="available">Sẵn sàng</option>
-                     <option value="rented">Đang thuê</option>
-                     <option value="maintenance">Bảo trì</option>
-                   </select>
+               {editingVehicle && (
+                 <div className={styles.formRow}>
+                   <div className={styles.formGroup}>
+                     <label>Trạng thái *</label>
+                     <select name="status" required>
+                       <option value="available">Sẵn sàng</option>
+                       <option value="rented">Đang thuê</option>
+                       <option value="maintenance">Bảo trì</option>
+                     </select>
+                   </div>
                  </div>
+               )}
+
+               <div className={styles.formGroup}>
+                 <label>Ảnh xe</label>
+                 <input
+                   type="file"
+                   accept="image/*"
+                   multiple
+                   onChange={(e) => {
+                     if (e.target.files) {
+                       setSelectedImages(Array.from(e.target.files));
+                     }
+                   }}
+                   style={{ marginBottom: '10px' }}
+                 />
+                 {selectedImages.length > 0 && (
+                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px', marginTop: '10px' }}>
+                     {selectedImages.map((image, index) => (
+                       <div key={index} style={{ position: 'relative', width: '100px', height: '100px' }}>
+                         <img
+                           src={URL.createObjectURL(image)}
+                           alt={`Preview ${index}`}
+                           style={{ width: '100%', height: '100%', objectFit: 'cover', borderRadius: '4px' }}
+                         />
+                         <button
+                           type="button"
+                           onClick={() => setSelectedImages(selectedImages.filter((_, i) => i !== index))}
+                           style={{
+                             position: 'absolute',
+                             top: '-5px',
+                             right: '-5px',
+                             background: 'red',
+                             color: 'white',
+                             border: 'none',
+                             borderRadius: '50%',
+                             width: '20px',
+                             height: '20px',
+                             cursor: 'pointer'
+                           }}
+                         >
+                           ×
+                         </button>
+                       </div>
+                     ))}
+                   </div>
+                 )}
+                 {currentImages && currentImages.length > 0 && (
+                   <div style={{ marginTop: '10px' }}>
+                     <p style={{ marginBottom: '5px', fontSize: '12px', color: '#666' }}>Ảnh hiện tại:</p>
+                     <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                       {currentImages.map((imgUrl, index) => (
+                         <div key={index} style={{ position: 'relative', display: 'inline-block' }}>
+                           <img
+                             src={getImageUrl(imgUrl)}
+                             alt={`Current ${index}`}
+                             style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: '4px' }}
+                           />
+                           <button
+                             type="button"
+                             onClick={() => handleRemoveCurrentImage(index)}
+                             style={{
+                               position: 'absolute',
+                               top: '-6px',
+                               right: '-6px',
+                               background: '#ff4d4f',
+                               color: 'white',
+                               border: 'none',
+                               borderRadius: '50%',
+                               width: '20px',
+                               height: '20px',
+                               cursor: 'pointer',
+                               fontSize: '12px',
+                               lineHeight: '1',
+                               display: 'flex',
+                               alignItems: 'center',
+                               justifyContent: 'center',
+                               boxShadow: '0 2px 4px rgba(0,0,0,0.2)',
+                               transition: 'all 0.3s ease',
+                               padding: 0
+                             }}
+                             onMouseEnter={(e) => {
+                               e.currentTarget.style.background = '#ff7875';
+                               e.currentTarget.style.transform = 'scale(1.1)';
+                             }}
+                             onMouseLeave={(e) => {
+                               e.currentTarget.style.background = '#ff4d4f';
+                               e.currentTarget.style.transform = 'scale(1)';
+                             }}
+                           >
+                             ×
+                           </button>
+                         </div>
+                       ))}
+                     </div>
+                   </div>
+                 )}
                </div>
                </form>
              </div>
@@ -500,12 +664,13 @@ const VehicleManagement: React.FC = () => {
                <button 
                  type="button" 
                  className={styles.saveBtn}
+                 disabled={uploadingImages}
                  onClick={() => {
                    const form = document.querySelector('form') as HTMLFormElement;
                    if (form) form.requestSubmit();
                  }}
                >
-                 {editingVehicle ? 'Cập nhật' : 'Thêm mới'}
+                 {uploadingImages ? 'Đang lưu...' : editingVehicle ? 'Cập nhật' : 'Thêm mới'}
                </button>
              </div>
           </div>

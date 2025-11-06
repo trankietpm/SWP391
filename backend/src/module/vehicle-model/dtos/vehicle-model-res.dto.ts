@@ -16,7 +16,6 @@ export class VehicleModelResDto {
   topSpeed: string;
   acceleration: string;
   highlights: string[];
-  images?: string[];
   date_created: Date;
 }
 

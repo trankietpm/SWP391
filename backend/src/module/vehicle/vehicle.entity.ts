@@ -31,6 +31,9 @@ export class Vehicle {
   @Column({ type: 'varchar', length: 20, unique: true })
   license_plate: string;
 
+  @Column({ type: 'json', nullable: true })
+  images: string[];
+
   @CreateDateColumn({ type: 'datetime' })
   date_created: Date;
 }

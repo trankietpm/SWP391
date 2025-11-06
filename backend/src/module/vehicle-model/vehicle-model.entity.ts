@@ -66,9 +66,6 @@ export class VehicleModel {
   @Column({ type: 'json' })
   highlights: string[];
 
-  @Column({ type: 'json', nullable: true })
-  images: string[];
-
   @CreateDateColumn({ type: 'datetime' })
   date_created: Date;
 

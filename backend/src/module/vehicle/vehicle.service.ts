@@ -6,6 +6,7 @@ import { VehicleReqDto } from './dtos/vehicle-req.dto';
 import { VehicleModel } from '../vehicle-model/vehicle-model.entity';
 import { Station } from '../station/station.entity';
 import { VehicleStatus } from '../../enums/vehicle-status.enum';
+import { VehicleUploadService } from './vehicle-upload.service';
 
 @Injectable()
 export class VehicleService {
@@ -16,6 +17,7 @@ export class VehicleService {
     private readonly vehicleModelRepository: Repository<VehicleModel>,
     @InjectRepository(Station)
     private readonly stationRepository: Repository<Station>,
+    private readonly uploadService: VehicleUploadService,
   ) {}
 
   async findAll(): Promise<Vehicle[]> {
@@ -63,9 +65,20 @@ export class VehicleService {
     });
     if (!station) throw new NotFoundException('Station not found');
 
+    let imagePaths: string[] = [];
+    if (vehicleReqDto.base64Images && vehicleReqDto.base64Images.length > 0) {
+      imagePaths = this.uploadService.saveBase64Images(vehicleReqDto.license_plate, vehicleReqDto.base64Images);
+    } else if (vehicleReqDto.images) {
+      imagePaths = vehicleReqDto.images;
+    }
+
     const vehicle = this.vehicleRepository.create({
-      ...vehicleReqDto,
-      status: vehicleReqDto.status || VehicleStatus.AVAILABLE,
+      vehicle_model_id: vehicleReqDto.vehicle_model_id,
+      station_id: vehicleReqDto.station_id,
+      battery_status: vehicleReqDto.battery_status,
+      status: VehicleStatus.AVAILABLE,
+      license_plate: vehicleReqDto.license_plate,
+      images: imagePaths,
     });
     return await this.vehicleRepository.save(vehicle);
   }
@@ -94,7 +107,28 @@ export class VehicleService {
       if (!station) throw new NotFoundException('Station not found');
     }
 
-    Object.assign(vehicle, vehicleReqDto);
+    const oldImages = vehicle.images || [];
+    let newImages: string[] = [];
+
+    if (vehicleReqDto.base64Images && vehicleReqDto.base64Images.length > 0) {
+      const licensePlate = vehicleReqDto.license_plate || vehicle.license_plate;
+      const uploadedPaths = this.uploadService.saveBase64Images(licensePlate, vehicleReqDto.base64Images);
+      newImages = [...(vehicleReqDto.images || oldImages), ...uploadedPaths];
+    } else if (vehicleReqDto.images) {
+      newImages = vehicleReqDto.images;
+    } else {
+      newImages = oldImages;
+    }
+
+    const imagesToDelete = oldImages.filter(img => !newImages.includes(img));
+    if (imagesToDelete.length > 0) {
+      this.uploadService.deleteImages(imagesToDelete);
+    }
+
+    Object.assign(vehicle, {
+      ...vehicleReqDto,
+      images: newImages,
+    });
     return this.vehicleRepository.save(vehicle);
   }
 
@@ -103,6 +137,10 @@ export class VehicleService {
     
     if (vehicle.status === VehicleStatus.RENTED) {
       throw new BadRequestException('Không thể xóa xe đang được thuê');
+    }
+
+    if (vehicle.images && vehicle.images.length > 0) {
+      this.uploadService.deleteImages(vehicle.images);
     }
 
     await this.vehicleRepository.remove(vehicle);
