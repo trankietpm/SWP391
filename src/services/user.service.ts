@@ -1,24 +1,14 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8055';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3123';
 
 export interface User {
-  id: string;
+  user_id: number;
   email: string;
   first_name: string;
   last_name: string;
   role: string;
-  status: string;
   date_created: string;
-  last_access: string;
-}
-
-export interface UserResponse {
-  data: User;
-}
-
-export interface UsersResponse {
-  data: User[];
 }
 
 export const userService = {
@@ -34,49 +24,50 @@ export const userService = {
     return headers;
   },
 
-  // Get all users with specific role
+  // Get all users
   async getAllUsers(): Promise<User[]> {
-    const response = await axios.get<UsersResponse>(`${API_BASE_URL}/users`, {
-      params: {
-        filter: {
-          role: {
-            _eq: 'roles/2a8be411-9ba6-48ad-a48b-b119096b97f8'
-          }
-        }
-      },
+    const response = await axios.get<User[]>(`${API_BASE_URL}/user`, {
       headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
   },
 
   // Get user by ID
-  async getUserById(id: string): Promise<User> {
-    const response = await axios.get<UserResponse>(`${API_BASE_URL}/users/${id}`, {
+  async getUserById(id: number): Promise<User> {
+    const response = await axios.get<User>(`${API_BASE_URL}/user/${id}`, {
       headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
   },
 
-  // Create user
-  async createUser(data: Omit<User, 'id' | 'date_created' | 'last_access'>): Promise<User> {
-    const response = await axios.post<UserResponse>(`${API_BASE_URL}/users`, data, {
+  // Create car rental user (ADMIN, STAFF only)
+  async createCarRentalUser(data: Omit<User, 'user_id' | 'date_created' | 'role'>): Promise<User> {
+    const response = await axios.post<User>(`${API_BASE_URL}/user/car_rental`, data, {
       headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
+  },
+
+  // Create staff user (ADMIN only)
+  async createStaffUser(data: Omit<User, 'user_id' | 'date_created' | 'role'>): Promise<User> {
+    const response = await axios.post<User>(`${API_BASE_URL}/user/staff`, data, {
+      headers: this.getAuthHeaders(),
+    });
+    return response.data;
   },
 
   // Update user
-  async updateUser(id: string, data: Partial<Omit<User, 'id' | 'date_created' | 'last_access'>>): Promise<User> {
-    const response = await axios.patch<UserResponse>(`${API_BASE_URL}/users/${id}`, data, {
+  async updateUser(id: number, data: Partial<Omit<User, 'user_id' | 'date_created'>>): Promise<User> {
+    const response = await axios.put<User>(`${API_BASE_URL}/user/${id}`, data, {
       headers: this.getAuthHeaders(),
     });
-    return response.data.data;
+    return response.data;
   },
 
   // Delete user
-  async deleteUser(id: string): Promise<boolean> {
+  async deleteUser(id: number): Promise<boolean> {
     try {
-      await axios.delete(`${API_BASE_URL}/users/${id}`, {
+      await axios.delete(`${API_BASE_URL}/user/${id}`, {
         headers: this.getAuthHeaders(),
       });
       return true;

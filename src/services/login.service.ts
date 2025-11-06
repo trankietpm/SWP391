@@ -1,6 +1,6 @@
 import axios from 'axios';
 
-const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:8055';
+const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3123';
 
 export interface LoginRequest {
   email: string;
@@ -8,9 +8,16 @@ export interface LoginRequest {
 }
 
 export interface LoginResponse {
-  success: boolean;
+  access_token: string;
+  user: {
+    user_id: number;
+    email: string;
+    first_name: string;
+    last_name: string;
+    role: string;
+    date_created: string;
+  };
   message: string;
-  token?: string;
 }
 
 export interface CreateUserRequest {
@@ -21,16 +28,16 @@ export interface CreateUserRequest {
 }
 
 export interface CreateUserResponse {
-  success: number;
   message: string;
 }
 
 export interface UserInfo {
-  id: string;
+  user_id: number;
   email: string;
-  name: string;
-  first_name?: string;
-  last_name?: string;
+  first_name: string;
+  last_name: string;
+  role: string;
+  date_created: string;
 }
 
 export interface UserProfile {
@@ -54,86 +61,97 @@ export interface UpdateUserProfileRequest {
 
 export const loginService = {
   async login(data: LoginRequest): Promise<LoginResponse> {
-    const response = await axios.post(`${API_BASE_URL}/auth/login`, data, {
+    const response = await axios.post<LoginResponse>(`${API_BASE_URL}/user/login`, data, {
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    return {
-      success: true,
-      message: 'Login successful',
-      token: response.data.data.access_token
-    };
+    return response.data;
   },
 
   async createUser(data: CreateUserRequest): Promise<CreateUserResponse> {
-    await axios.post(`${API_BASE_URL}/users/`, data, {
+    const response = await axios.post<CreateUserResponse>(`${API_BASE_URL}/user/register`, data, {
       headers: {
         'Content-Type': 'application/json',
       },
     });
 
-    return {
-      success: 1,
-      message: 'User created successfully'
-    };
+    return response.data;
   },
 
 
+  getUserIdFromToken(token: string): number {
+    try {
+      const payload = JSON.parse(atob(token.split('.')[1]));
+      return payload.sub;
+    } catch {
+      throw new Error('Invalid token');
+    }
+  },
+
   async getCurrentUser(token: string): Promise<UserInfo> {
-    const response = await axios.get(`${API_BASE_URL}/users/me`, {
+    const userId = this.getUserIdFromToken(token);
+    const response = await axios.get<UserInfo>(`${API_BASE_URL}/user/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-    return response.data.data;
+    return response.data;
   },
 
   async getUserProfile(userId: string, token: string): Promise<UserProfile> {
-    const response = await axios.get(`${API_BASE_URL}/items/users/${userId}`, {
+    const response = await axios.get(`${API_BASE_URL}/user/${userId}`, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
     
-    if (!response.data.data) {
-      throw new Error('Failed to fetch user profile');
-    }
+    const userData = response.data;
     
-    return response.data.data;
+    return {
+      id: userData.user_id.toString(),
+      first_name: userData.first_name || '',
+      last_name: userData.last_name || '',
+      email: userData.email || '',
+      phone: '',
+      address: '',
+      avatar: undefined
+    };
   },
 
   async updateUserProfile(userId: string, profileData: UpdateUserProfileRequest, token: string): Promise<UserProfile> {
-    const response = await axios.patch(`${API_BASE_URL}/users/${userId}`, profileData, {
+    const response = await axios.put(`${API_BASE_URL}/user/${userId}`, profileData, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-    if (!response.data.data) {
-      throw new Error('Failed to update user profile');
-    }
-
-    return response.data.data;
+    const userData = response.data;
+    
+    return {
+      id: userData.user_id.toString(),
+      first_name: userData.first_name || '',
+      last_name: userData.last_name || '',
+      email: userData.email || '',
+      phone: '',
+      address: '',
+      avatar: undefined
+    };
   },
 
   async updateUser(userId: string, userData: UpdateUserProfileRequest, token: string): Promise<UserInfo> {
-    const response = await axios.patch(`${API_BASE_URL}/users/${userId}`, userData, {
+    const response = await axios.put(`${API_BASE_URL}/user/${userId}`, userData, {
       headers: {
         'Authorization': `Bearer ${token}`,
         'Content-Type': 'application/json',
       },
     });
 
-    if (!response.data.data) {
-      throw new Error('Failed to update user');
-    }
-
-    return response.data.data;
+    return response.data;
   }
 };
