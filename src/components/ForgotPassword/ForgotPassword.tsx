@@ -16,8 +16,8 @@ const ForgotPassword: React.FC<ForgotPasswordProps> = ({ onBack, onSubmit }) => 
   const [verificationCode, setVerificationCode] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword] = useState(false);
+  const [showConfirmPassword] = useState(false);
   const [timeLeft, setTimeLeft] = useState(300); 
 
   useEffect(() => {

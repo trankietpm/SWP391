@@ -7,9 +7,12 @@ export class VehicleResDto {
   vehicle_model_id: number;
   station_id: number;
   battery_status: number;
+  odometer: number;
+  vehicle_condition: string;
   status: VehicleStatus;
   license_plate: string;
   images?: string[];
+  rating: number;
   date_created: Date;
   vehicleModel?: VehicleModelResDto;
   station?: StationResDto;

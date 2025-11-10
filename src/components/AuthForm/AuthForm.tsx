@@ -1,7 +1,6 @@
 "use client";
 
 import React, { useState } from 'react';
-import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import styles from './AuthForm.module.scss';
 import AuthFormSection from '../AuthFormSection/AuthFormSection';
@@ -66,30 +65,26 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       
       // Handle registration
       setIsLoading(true);
-      try {
-        const response = await loginService.createUser({
-          first_name: formData.lastName,  
-          last_name: formData.firstName,   
-          email: formData.email,
-          password: formData.password
-        });
-        
-        // Registration successful, show email verification
+      await loginService.createUser({
+        first_name: formData.lastName,  
+        last_name: formData.firstName,   
+        email: formData.email,
+        password: formData.password
+      }).then(() => {
         setShowEmailVerification(true);
-      } catch (error: any) {
-        setError(error.response?.data?.message || 'Registration failed');
-      } finally {
-        setIsLoading(false);
-      }
+      }).catch((error) => {
+        const errorMessage = error instanceof Error ? error.message : 'Registration failed';
+        setError(errorMessage);
+      });
+      
+      setIsLoading(false);
     } else {
       // Handle login
       setIsLoading(true);
-      try {
-        const response = await loginService.login({
-          email: formData.email,
-          password: formData.password
-        });
-        
+      await loginService.login({
+        email: formData.email,
+        password: formData.password
+      }).then(async (response) => {
         // Store token and user data
         if (response.access_token) {
           const userData = {
@@ -109,25 +104,13 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
         }
         
         router.push('/');
-      } catch (error: any) {
-        console.error('Login error:', error);
-        const errorMessage = error.response?.data?.message || error.message || 'Login failed';
+      }).catch((error) => {
+        const errorMessage = error instanceof Error ? error.message : 'Login failed';
         setError(errorMessage);
-      } finally {
-        setIsLoading(false);
-      }
+      });
+      
+      setIsLoading(false);
     }
-  };
-
-  const handleVerify = (code: string) => {
-    console.log('Verification code:', code);
-    // Handle verification logic here
-    onSubmit(formData);
-  };
-
-  const handleResend = () => {
-    console.log('Resending verification code...');
-    // Handle resend logic here
   };
 
   const handleBack = () => {
@@ -161,8 +144,6 @@ const AuthForm: React.FC<AuthFormProps> = ({ type, onSubmit }) => {
       {showEmailVerification ? (
         <EmailVerification
           email={formData.email}
-          onVerify={handleVerify}
-          onResend={handleResend}
           onBack={handleBack}
         />
       ) : showForgotPassword ? (

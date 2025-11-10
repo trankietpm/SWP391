@@ -13,6 +13,15 @@ export class VehicleReqDto {
   @Max(100)
   battery_status: number;
 
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  odometer?: number;
+
+  @IsString()
+  @IsOptional()
+  vehicle_condition?: string;
+
   @IsEnum(VehicleStatus)
   @IsOptional()
   status?: VehicleStatus;
@@ -29,5 +38,10 @@ export class VehicleReqDto {
   @IsString({ each: true })
   @IsOptional()
   images?: string[];
+
+  @IsNumber()
+  @Min(0)
+  @IsOptional()
+  rating?: number;
 }
 

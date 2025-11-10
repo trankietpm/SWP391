@@ -12,11 +12,6 @@ export class VehicleModelReqDto {
   @Min(0)
   price: number;
 
-  @IsNumber()
-  @Min(0)
-  @IsOptional()
-  rating?: number;
-
   @IsArray()
   @IsString({ each: true })
   features: string[];

@@ -124,7 +124,7 @@ export class UserService {
     const token = randomBytes(32).toString('hex');
     pendingUsers.set(token, userData);
 
-    const confirmUrl = `http://localhost:${process.env.PORT || 3123}/user/confirm/${token}`;
+    const confirmUrl = `http://localhost:${process.env.PORT}/user/confirm/${token}`;
     try {
       await this.mailService.sendMail(
         registerDto.email,

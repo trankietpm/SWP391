@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleApiError } from '../utils/api-error-handler';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3123';
 
@@ -40,16 +41,20 @@ export const stationService = {
         headers: this.getAuthHeaders(),
       });
       return response.data;
-    } catch {
-      return undefined;
+    } catch (error) {
+      handleApiError(error, 'Có lỗi xảy ra khi lấy thông tin trạm');
     }
   },
 
   async getAllStations(): Promise<Station[]> {
-    const response = await axios.get<Station[]>(`${API_BASE_URL}/station`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    try {
+      const response = await axios.get<Station[]>(`${API_BASE_URL}/station`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi lấy danh sách trạm');
+    }
   },
 
   async getActiveStations(): Promise<Station[]> {
@@ -80,17 +85,25 @@ export const stationService = {
   },
 
   async createStation(data: Omit<Station, 'id' | 'date_created'>): Promise<Station> {
-    const response = await axios.post<Station>(`${API_BASE_URL}/station`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    try {
+      const response = await axios.post<Station>(`${API_BASE_URL}/station`, data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi tạo trạm');
+    }
   },
 
   async updateStation(id: number, data: Partial<Omit<Station, 'id' | 'date_created'>>): Promise<Station> {
-    const response = await axios.put<Station>(`${API_BASE_URL}/station/${id}`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    try {
+      const response = await axios.put<Station>(`${API_BASE_URL}/station/${id}`, data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi cập nhật trạm');
+    }
   },
 
   async deleteStation(id: number): Promise<boolean> {
@@ -99,8 +112,8 @@ export const stationService = {
         headers: this.getAuthHeaders(),
       });
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi xóa trạm');
     }
   }
 };

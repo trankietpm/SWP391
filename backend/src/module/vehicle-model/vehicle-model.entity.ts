@@ -24,18 +24,6 @@ export class VehicleModel {
   })
   price: number;
 
-  @Column({
-    type: 'decimal',
-    precision: 3,
-    scale: 1,
-    default: 0,
-    transformer: {
-      to: (value: number) => value,
-      from: (value: string) => parseFloat(value) || 0
-    }
-  })
-  rating: number;
-
   @Column({ type: 'json' })
   features: string[];
 

@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useAuthCheck } from '@/hooks/useAuthCheck';
 import { loginService, UserProfile } from '@/services/login.service';
-import { UserOutlined, MailOutlined, PhoneOutlined, EnvironmentOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
+import { UserOutlined, EditOutlined, SaveOutlined, CloseOutlined } from '@ant-design/icons';
 import styles from './Profile.module.scss';
 
 const ProfilePage: React.FC = () => {
@@ -47,7 +47,7 @@ const ProfilePage: React.FC = () => {
           phone: '',
           address: ''
         });
-      } catch (error) {
+      } catch {
         // Handle error silently
       } finally {
         setLoading(false);
@@ -78,7 +78,7 @@ const ProfilePage: React.FC = () => {
       setUserProfile(updatedData);
       setIsEditing(false);
       alert('Cập nhật thông tin thành công!');
-    } catch (error) {
+    } catch {
       alert('Có lỗi xảy ra khi cập nhật thông tin');
     }
   };

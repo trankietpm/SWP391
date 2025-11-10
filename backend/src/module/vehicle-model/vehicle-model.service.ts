@@ -34,7 +34,6 @@ export class VehicleModelService {
     
     const vehicleModel = this.vehicleModelRepository.create({
       ...vehicleModelReqDto,
-      rating: vehicleModelReqDto.rating || 0,
       isPopular: vehicleModelReqDto.isPopular || false,
     });
     return await this.vehicleModelRepository.save(vehicleModel);

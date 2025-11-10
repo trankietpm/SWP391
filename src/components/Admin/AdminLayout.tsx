@@ -3,13 +3,10 @@ import React, { useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { 
-  MenuFoldOutlined, 
-  MenuUnfoldOutlined, 
   CarOutlined, 
   UserOutlined, 
   DashboardOutlined,
   LogoutOutlined,
-  FileTextOutlined,
   EnvironmentOutlined,
   TeamOutlined,
   CalendarOutlined
@@ -21,7 +18,7 @@ interface AdminLayoutProps {
 }
 
 const AdminLayout: React.FC<AdminLayoutProps> = ({ children }) => {
-  const [collapsed, setCollapsed] = useState(false);
+  const [collapsed] = useState(false);
   const pathname = usePathname();
 
   const menuItems = [

@@ -1,20 +1,14 @@
 "use client";
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import styles from './EmailVerification.module.scss';
 
 interface EmailVerificationProps {
   email: string;
-  onVerify: (code: string) => void;
-  onResend: () => void;
   onBack: () => void;
 }
 
-const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onVerify, onResend, onBack }) => {
-
-  const handleLogin = () => {
-    window.location.href = '/sign-in';
-  };
+const EmailVerification: React.FC<EmailVerificationProps> = ({ email, onBack }) => {
 
   return (
     <div className={styles.formSection}>

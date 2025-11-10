@@ -9,6 +9,8 @@ import {
   FilterOutlined,
   LoadingOutlined
 } from '@ant-design/icons';
+import dayjs from 'dayjs';
+import DateRangePicker from '../DateRangePicker/DateRangePicker';
 import { VehicleDetail } from '../../data/vehicles';
 import { vehicleService, getImageUrl } from '../../services/vehicle.service';
 import { vehicleModelService } from '../../services/vehicle-model.service';
@@ -25,6 +27,8 @@ const VehicleManagement: React.FC = () => {
       status?: 'available' | 'rented' | 'maintenance';
       licensePlate?: string;
       stationId?: number;
+      odometer?: number;
+      vehicleCondition?: string;
     }
   }>({});
   const [searchTerm, setSearchTerm] = useState('');
@@ -40,6 +44,8 @@ const VehicleManagement: React.FC = () => {
   const [selectedImages, setSelectedImages] = useState<File[]>([]);
   const [currentImages, setCurrentImages] = useState<string[]>([]);
   const [uploadingImages, setUploadingImages] = useState(false);
+  const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
+  const [availabilityMap, setAvailabilityMap] = useState<{[key: number]: boolean}>({});
 
   const fetchVehicles = async () => {
     try {
@@ -55,6 +61,8 @@ const VehicleManagement: React.FC = () => {
           batteryStatus?: number;
           status?: 'available' | 'rented' | 'maintenance';
           licensePlate?: string;
+          odometer?: number;
+          vehicleCondition?: string;
         }
       } = {};
       const modelMap = new Map(apiModels.map(m => [m.id, m]));
@@ -68,6 +76,8 @@ const VehicleManagement: React.FC = () => {
           ...(vehicle.status && { status: vehicle.status }),
           ...(vehicle.license_plate && { licensePlate: vehicle.license_plate }),
           ...(vehicle.station_id && { stationId: vehicle.station_id }),
+          ...(vehicle.odometer !== undefined && { odometer: vehicle.odometer }),
+          ...(vehicle.vehicle_condition && { vehicleCondition: vehicle.vehicle_condition }),
         };
         
         return {
@@ -78,7 +88,7 @@ const VehicleManagement: React.FC = () => {
           images: imageUrls,
           price: model?.price.toString() || '0',
           availableCount: 1,
-          rating: model?.rating || 0,
+          rating: vehicle.rating || 0,
           features: model?.features || [],
           isPopular: model?.isPopular || false,
           description: model?.description || '',
@@ -108,6 +118,30 @@ const VehicleManagement: React.FC = () => {
   useEffect(() => {
     fetchVehicles();
   }, []);
+
+  // Check availability when date range changes
+  useEffect(() => {
+    const checkAvailability = async () => {
+      if (!dateRange || !dateRange[0] || !dateRange[1]) return;
+      
+      const startDate = dateRange[0].format('YYYY-MM-DD HH:mm');
+      const endDate = dateRange[1].format('YYYY-MM-DD HH:mm');
+      
+      const availableVehicles = await vehicleService.getAllVehicles({
+        startDate,
+        endDate,
+      }).catch(() => []);
+      
+      const map: {[key: number]: boolean} = {};
+      vehicles.forEach(vehicle => {
+        map[vehicle.id] = availableVehicles.some(v => v.id === vehicle.id);
+      });
+      
+      setAvailabilityMap(map);
+    };
+    
+    checkAvailability();
+  }, [dateRange, vehicles]);
 
   const filteredVehicles = vehicles.filter(vehicle => {
     const matchesSearch = vehicle.name.toLowerCase().includes(searchTerm.toLowerCase());
@@ -152,14 +186,22 @@ const VehicleManagement: React.FC = () => {
           const stationInput = form.querySelector('[name="stationId"]') as HTMLSelectElement;
           const licenseInput = form.querySelector('[name="license_plate"]') as HTMLInputElement;
           const batteryInput = form.querySelector('[name="battery_status"]') as HTMLInputElement;
+          const odometerInput = form.querySelector('[name="odometer"]') as HTMLInputElement;
+          const vehicleConditionInput = form.querySelector('[name="vehicle_condition"]') as HTMLTextAreaElement;
           const statusInput = form.querySelector('[name="status"]') as HTMLSelectElement;
+          const ratingInput = form.querySelector('[name="rating"]') as HTMLInputElement;
           
           if (modelIdInput) modelIdInput.value = vehicleData.vehicle_model_id.toString();
           if (stationInput) stationInput.value = vehicleData.station_id.toString();
           if (licenseInput) licenseInput.value = vehicleData.license_plate || '';
           if (batteryInput) batteryInput.value = vehicleData.battery_status.toString();
+          if (odometerInput) odometerInput.value = (vehicleData.odometer || 0).toString();
+          if (vehicleConditionInput) vehicleConditionInput.value = vehicleData.vehicle_condition || '';
           if (statusInput) {
             statusInput.value = vehicleData.status;
+          }
+          if (ratingInput) {
+            ratingInput.value = (vehicleData.rating || 0).toString();
           }
         }
       }, 100);
@@ -221,15 +263,6 @@ const VehicleManagement: React.FC = () => {
     setShowViewModal(true);
   };
 
-  const getStatusLabel = (status: 'available' | 'rented' | 'maintenance' | undefined): string => {
-    if (!status) return 'Chưa xác định';
-    switch (status) {
-      case 'available': return 'Sẵn sàng';
-      case 'rented': return 'Đang thuê';
-      case 'maintenance': return 'Bảo trì';
-      default: return 'Chưa xác định';
-    }
-  };
 
 
   const handleSubmit = async (e: React.FormEvent<HTMLFormElement>) => {
@@ -258,7 +291,10 @@ const VehicleManagement: React.FC = () => {
         station_id: parseInt(formData.get('stationId') as string) || 0,
         battery_status: formData.get('battery_status') ? parseInt(formData.get('battery_status') as string) : 0,
         license_plate: (formData.get('license_plate') as string) || '',
+        odometer: formData.get('odometer') ? parseInt(formData.get('odometer') as string) : 0,
+        vehicle_condition: (formData.get('vehicle_condition') as string) || '',
         status: ((formData.get('status') as string)?.toLowerCase() || 'available') as 'available' | 'rented' | 'maintenance',
+        rating: formData.get('rating') ? parseFloat(formData.get('rating') as string) : 0,
         ...(base64Images.length > 0 && { base64Images }),
         ...(editingVehicle && currentImages.length > 0 && { images: currentImages }),
       };
@@ -340,6 +376,16 @@ const VehicleManagement: React.FC = () => {
             ))}
           </select>
         </div>
+
+        <div className={styles.dateRangeBox}>
+          <DateRangePicker
+            value={dateRange}
+            onChange={setDateRange}
+            placeholder={['Từ ngày', 'Đến ngày']}
+            format="DD/MM/YYYY HH:mm"
+            style={{ width: '100%' }}
+          />
+        </div>
       </div>
 
       <div className={styles.tableContainer}>
@@ -384,17 +430,35 @@ const VehicleManagement: React.FC = () => {
                   {vehicleExtraData[vehicle.id]?.licensePlate || '-'}
                 </td>
                 <td>
-                  <span className={`${styles.status} ${
-                    vehicleExtraData[vehicle.id]?.status === 'available' ? styles.available :
-                    vehicleExtraData[vehicle.id]?.status === 'rented' ? styles.rented :
-                    vehicleExtraData[vehicle.id]?.status === 'maintenance' ? styles.maintenance :
-                    styles.normal
-                  }`}>
-                    {vehicleExtraData[vehicle.id]?.status === 'available' ? 'Sẵn sàng' :
-                     vehicleExtraData[vehicle.id]?.status === 'rented' ? 'Đang thuê' :
-                     vehicleExtraData[vehicle.id]?.status === 'maintenance' ? 'Bảo trì' :
-                     'Chưa xác định'}
-                  </span>
+                  {(() => {
+                    const isAvailable = availabilityMap[vehicle.id];
+                    const actualStatus = vehicleExtraData[vehicle.id]?.status;
+                    
+                    // Nếu xe đang maintenance, luôn hiển thị maintenance
+                    if (actualStatus === 'maintenance') {
+                      return (
+                        <span className={`${styles.status} ${styles.maintenance}`}>
+                          Bảo trì
+                        </span>
+                      );
+                    }
+                    
+                    // Nếu xe có sẵn trong khoảng thời gian → Sẵn sàng
+                    if (isAvailable) {
+                      return (
+                        <span className={`${styles.status} ${styles.available}`}>
+                          Sẵn sàng
+                        </span>
+                      );
+                    }
+                    
+                    // Nếu xe không có sẵn → Đang thuê (trong khoảng thời gian đó)
+                    return (
+                      <span className={`${styles.status} ${styles.rented}`}>
+                        Đang thuê
+                      </span>
+                    );
+                  })()}
                 </td>
                 <td>
                   <div className={styles.actions}>
@@ -542,15 +606,48 @@ const VehicleManagement: React.FC = () => {
                  </div>
                </div>
                
+               <div className={styles.formRow}>
+                 <div className={styles.formGroup}>
+                   <label>Số km</label>
+                   <input 
+                     type="number" 
+                     name="odometer"
+                     min="0"
+                     defaultValue={editingVehicle?.id ? vehicleExtraData[editingVehicle.id]?.odometer || 0 : 0}
+                     placeholder="Nhập số km"
+                   />
+                 </div>
+               </div>
+               
+               <div className={styles.formGroup}>
+                 <label>Tình trạng xe</label>
+                 <textarea 
+                   name="vehicle_condition"
+                   placeholder="Mô tả tình trạng xe"
+                   rows={3}
+                   defaultValue={editingVehicle?.id ? vehicleExtraData[editingVehicle.id]?.vehicleCondition || '' : ''}
+                 />
+               </div>
+               
                {editingVehicle && (
                  <div className={styles.formRow}>
                    <div className={styles.formGroup}>
                      <label>Trạng thái *</label>
                      <select name="status" required>
                        <option value="available">Sẵn sàng</option>
-                       <option value="rented">Đang thuê</option>
                        <option value="maintenance">Bảo trì</option>
                      </select>
+                   </div>
+                   <div className={styles.formGroup}>
+                     <label>Đánh giá</label>
+                     <input
+                       type="number"
+                       name="rating"
+                       step="0.1"
+                       min="0"
+                       max="5"
+                       placeholder="Nhập đánh giá (0-5)"
+                     />
                    </div>
                  </div>
                )}
@@ -715,8 +812,22 @@ const VehicleManagement: React.FC = () => {
                       </span>
                     </div>
                     <div className={styles.viewItem}>
-                      <label>Trạng thái:</label>
-                      <span>{getStatusLabel(viewingVehicle.id ? vehicleExtraData[viewingVehicle.id]?.status : undefined)}</span>
+                      <label>Số km hiện tại:</label>
+                      <span>
+                        {viewingVehicle.id && vehicleExtraData[viewingVehicle.id]?.odometer !== undefined
+                          ? `${vehicleExtraData[viewingVehicle.id]!.odometer} km` 
+                          : 'Chưa cập nhật'
+                        }
+                      </span>
+                    </div>
+                    <div className={styles.viewItem}>
+                      <label>Tình trạng xe:</label>
+                      <span>
+                        {viewingVehicle.id && vehicleExtraData[viewingVehicle.id]?.vehicleCondition
+                          ? vehicleExtraData[viewingVehicle.id]!.vehicleCondition
+                          : 'Chưa cập nhật'
+                        }
+                      </span>
                     </div>
                   </div>
                 </div>

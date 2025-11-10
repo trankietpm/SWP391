@@ -1,7 +1,6 @@
 .mapPage {
   min-height: 100vh;
   background: #f5f5f5;
-  padding-top: 80px; /* Account for navbar height */
 }
 
 .citySelect {
@@ -33,7 +32,7 @@
 
 .mapContainer {
   position: relative;
-  height: calc(100vh - 80px); /* Adjusted for navbar only */
+  height: 100vh;
 }
 
 .map {
@@ -189,6 +188,8 @@
   z-index: 1000;
   margin: 0 16px;
   width: calc(100% - 32px);
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(6px);
 }
 
 .carListHeader {
@@ -201,14 +202,14 @@
     margin: 0;
     font-size: 18px;
     font-weight: 600;
-    color: #001529;
+    color: #ffffff;
   }
   
   .closeButton {
-    background: #f5f5f5;
+    background: rgba(255, 255, 255, 0.2);
     border: none;
     font-size: 18px;
-    color: #666;
+    color: #ffffff;
     cursor: pointer;
     padding: 0;
     width: 32px;
@@ -219,10 +220,16 @@
     border-radius: 50%;
     
     &:hover {
-      background: #e8e8e8;
-      color: #333;
+      background: rgba(255, 255, 255, 0.3);
+      color: #ffffff;
     }
   }
+}
+
+.carListWrapper {
+  position: relative;
+  display: flex;
+  align-items: center;
 }
 
 .carList {
@@ -231,6 +238,7 @@
   padding: 16px 20px;
   overflow-x: auto;
   scrollbar-width: thin;
+  flex: 1;
   
   &::-webkit-scrollbar {
     height: 4px;
@@ -246,8 +254,49 @@
   }
 }
 
+.scrollButton {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  background: rgba(255, 255, 255, 0.9);
+  border: 1px solid rgba(0, 0, 0, 0.1);
+  border-radius: 50%;
+  width: 40px;
+  height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  z-index: 10;
+  transition: all 0.3s ease;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+  
+  &:hover {
+    background: rgba(255, 255, 255, 1);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2);
+    transform: translateY(-50%) scale(1.1);
+  }
+  
+  &:active {
+    transform: translateY(-50%) scale(0.95);
+  }
+  
+  svg {
+    font-size: 16px;
+    color: #001529;
+  }
+  
+  &.scrollButtonRight {
+    right: 10px;
+  }
+  
+  &:not(.scrollButtonRight) {
+    left: 10px;
+  }
+}
+
 .carCard {
-  min-width: 380px;
+  min-width: 420px;
   background: white;
   border: 1px solid #e8e8e8;
   border-radius: 12px;

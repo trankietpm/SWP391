@@ -18,7 +18,17 @@ export class VehicleController {
   async findAll(
     @Query('stationId') stationId?: string,
     @Query('modelId') modelId?: string,
+    @Query('startDate') startDate?: string,
+    @Query('endDate') endDate?: string,
   ): Promise<VehicleResDto[]> {
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const station = stationId ? parseInt(stationId) : undefined;
+      const model = modelId ? parseInt(modelId) : undefined;
+      return this.vehicleService.findAvailableByDateRange(start, end, station, model);
+    }
+
     if (stationId) {
       return this.vehicleService.findByStation(parseInt(stationId));
     }

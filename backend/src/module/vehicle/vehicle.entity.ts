@@ -25,6 +25,12 @@ export class Vehicle {
   @Column({ type: 'int', default: 0 })
   battery_status: number;
 
+  @Column({ type: 'int', default: 0 })
+  odometer: number;
+
+  @Column({ type: 'text', nullable: true })
+  vehicle_condition: string;
+
   @Column({ type: 'enum', enum: VehicleStatus, default: VehicleStatus.AVAILABLE })
   status: VehicleStatus;
 
@@ -33,6 +39,18 @@ export class Vehicle {
 
   @Column({ type: 'json', nullable: true })
   images: string[];
+
+  @Column({
+    type: 'decimal',
+    precision: 3,
+    scale: 1,
+    default: 0,
+    transformer: {
+      to: (value: number) => value,
+      from: (value: string) => parseFloat(value) || 0
+    }
+  })
+  rating: number;
 
   @CreateDateColumn({ type: 'datetime' })
   date_created: Date;

@@ -133,16 +133,22 @@
   display: flex;
   gap: 20px;
   height: 550px;
+  margin-bottom: 40px;
     
     .mainImage {
     flex: 1.5;
     border-radius: 12px;
     overflow: hidden;
+    background: #f8f9fa;
+    display: flex;
+    align-items: center;
+    justify-content: center;
     
     img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      background: white;
     }
   }
   
@@ -158,11 +164,17 @@
       overflow: hidden;
       border: 3px solid transparent;
       position: relative;
+      background: #f8f9fa;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.3s ease;
     
     img {
       width: 100%;
       height: 100%;
       object-fit: contain;
+      background: white;
     }
     
       .viewAllOverlay {
@@ -197,6 +209,37 @@
           color: #2c3e50;
           white-space: nowrap;
         }
+      }
+    }
+    
+    .viewAllButton {
+      background: white;
+      border: 2px solid #e8e8e8;
+      border-radius: 12px;
+      padding: 12px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      cursor: pointer;
+      transition: all 0.3s ease;
+      font-weight: 600;
+      color: #2c3e50;
+      
+      &:hover {
+        border-color: #2FA71D;
+        background: #f0f9ff;
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(47, 167, 29, 0.2);
+      }
+      
+      svg {
+        font-size: 18px;
+        color: #2FA71D;
+      }
+      
+      span {
+        font-size: 14px;
       }
     }
   }
@@ -1197,23 +1240,47 @@
       gap: 8px;
       
       label {
+        display: block;
+        margin-bottom: 8px;
         font-weight: 600;
         color: #2c3e50;
         font-size: 14px;
       }
       
-      .ant-picker {
-        border: 2px solid #e9ecef;
-        border-radius: 8px;
+      :global(.ant-picker),
+      :global(.ant-picker-outlined) {
+        width: 100% !important;
+        height: 48px !important;
+        border-radius: 8px !important;
+        border: 2px solid #e8e8e8 !important;
+        border-color: #e8e8e8 !important;
+        font-size: 14px;
         transition: all 0.3s ease;
+        background: #ffffff !important;
         
         &:hover {
-          border-color: #2FA71D;
+          border-color: #2FA71D !important;
         }
         
+        &:focus,
         &.ant-picker-focused {
-          border-color: #2FA71D;
-          box-shadow: 0 0 0 3px rgba(47, 167, 29, 0.1);
+          border-color: #2FA71D !important;
+          box-shadow: 0 0 0 3px rgba(47, 167, 29, 0.1) !important;
+        }
+        
+        :global(.ant-picker-input) {
+          input {
+            font-size: 14px;
+            color: #2c3e50;
+            
+            &::placeholder {
+              color: #bfbfbf;
+            }
+          }
+        }
+        
+        :global(.ant-picker-suffix) {
+          color: #2FA71D;
         }
       }
     }
@@ -1249,7 +1316,8 @@
   
   .bookingActions {
     display: flex;
-    gap: 15px;
+    flex-direction: column;
+    gap: 8px;
     
     .rentButton {
       flex: 1;
@@ -1267,6 +1335,16 @@
         transform: translateY(-2px);
         box-shadow: 0 8px 25px rgba(47, 167, 29, 0.3);
       }
+    }
+    
+    .bookingError {
+      color: #ff4d4f;
+      font-size: 14px;
+      text-align: center;
+      padding: 8px;
+      background: #fff1f0;
+      border: 1px solid #ffccc7;
+      border-radius: 4px;
     }
     
     .contactButton {

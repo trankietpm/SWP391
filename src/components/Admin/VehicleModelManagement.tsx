@@ -32,7 +32,6 @@ const VehicleModelManagement: React.FC = () => {
     name: '',
     type: 'Ô tô điện' as 'Xe máy điện' | 'Ô tô điện',
     price: '',
-    rating: '',
     description: '',
     battery: '',
     range: '',
@@ -93,7 +92,6 @@ const VehicleModelManagement: React.FC = () => {
       name: '',
       type: 'Ô tô điện',
       price: '',
-      rating: '',
       description: '',
       battery: '',
       range: '',
@@ -114,7 +112,6 @@ const VehicleModelManagement: React.FC = () => {
       name: model.name,
       type: model.type,
       price: model.price.toString(),
-      rating: model.rating.toString(),
       description: model.description || '',
       battery: model.battery,
       range: model.range,
@@ -142,7 +139,6 @@ const VehicleModelManagement: React.FC = () => {
         name: formData.name,
         type: formData.type,
         price: parseFloat(formData.price.replace(/,/g, '')) || 0,
-        rating: parseFloat(formData.rating) || 0,
         isPopular: formData.isPopular,
         description: formData.description || '',
         battery: formData.battery,
@@ -247,7 +243,6 @@ const VehicleModelManagement: React.FC = () => {
               <th>Tên mẫu xe</th>
               <th>Loại</th>
               <th>Giá</th>
-              <th>Đánh giá</th>
               <th>Trạng thái</th>
               <th>Thao tác</th>
             </tr>
@@ -263,12 +258,6 @@ const VehicleModelManagement: React.FC = () => {
                   </span>
                 </td>
                 <td className={styles.price}>{model.price.toLocaleString('vi-VN')} VNĐ/ngày</td>
-                <td>
-                  <div className={styles.rating}>
-                    <span>{model.rating.toFixed(1)}</span>
-                    <span style={{ color: '#ffc107' }}>★</span>
-                  </div>
-                </td>
                 <td>
                   {model.isPopular ? (
                     <span className={styles.popularTag}>Phổ biến</span>
@@ -408,21 +397,6 @@ const VehicleModelManagement: React.FC = () => {
                       required
                     />
                   </div>
-                  <div className={styles.formGroup}>
-                    <label>Đánh giá</label>
-                    <input
-                      type="number"
-                      step="0.1"
-                      min="0"
-                      max="5"
-                      value={formData.rating}
-                      onChange={(e) => setFormData({...formData, rating: e.target.value})}
-                      placeholder="Nhập đánh giá (0-5)"
-                    />
-                  </div>
-                </div>
-
-                <div className={styles.formRow}>
                   <div className={styles.formGroup}>
                     <label>Trạng thái</label>
                     <select
@@ -608,10 +582,6 @@ const VehicleModelManagement: React.FC = () => {
                     <div className={styles.viewItem}>
                       <label>Giá thuê:</label>
                       <span>{viewingModel.price.toLocaleString('vi-VN')} VNĐ/ngày</span>
-                    </div>
-                    <div className={styles.viewItem}>
-                      <label>Đánh giá:</label>
-                      <span>⭐ {viewingModel.rating.toFixed(1)}</span>
                     </div>
                     <div className={styles.viewItem}>
                       <label>Trạng thái:</label>

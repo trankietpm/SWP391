@@ -5,7 +5,6 @@ export class VehicleModelResDto {
   name: string;
   type: VehicleType;
   price: number;
-  rating: number;
   features: string[];
   isPopular: boolean;
   description?: string;

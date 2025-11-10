@@ -1,3 +1,4 @@
+import { Suspense } from 'react';
 import DetailVehicle from '@/components/DetailVehicle/DetailVehicle';
 
 interface VehicleDetailPageProps {
@@ -9,5 +10,9 @@ interface VehicleDetailPageProps {
 export default async function VehicleDetailPage({ params }: VehicleDetailPageProps) {
   const resolvedParams = await params;
   const vehicleId = parseInt(resolvedParams.id);
-  return <DetailVehicle vehicleId={vehicleId} />;
+  return (
+    <Suspense fallback={<div>Đang tải...</div>}>
+      <DetailVehicle vehicleId={vehicleId} />
+    </Suspense>
+  );
 }

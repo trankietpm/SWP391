@@ -80,10 +80,10 @@ export class UserController {
   async confirmRegister(@Param('token') token: string, @Res() res: Response) {
     try {
       await this.userService.confirmRegister(token);
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL!;
       return res.redirect(`${frontendUrl}/sign-in?confirmed=true`);
     } catch (error: any) {
-      const frontendUrl = process.env.FRONTEND_URL || 'http://localhost:3000';
+      const frontendUrl = process.env.FRONTEND_URL!;
       const errorMessage = encodeURIComponent(error.message || 'Xác nhận thất bại');
       return res.redirect(`${frontendUrl}/sign-in?error=${errorMessage}`);
     }

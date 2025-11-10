@@ -3,7 +3,6 @@ import React from 'react';
 import { 
   CarOutlined, 
   UserOutlined, 
-  FileTextOutlined, 
   DollarOutlined,
   CheckCircleOutlined,
   ClockCircleOutlined,
@@ -12,12 +11,10 @@ import {
 import { allVehicles } from '../../data/vehicles';
 import { mockUsers } from '../../data/users';
 import { mockBookings } from '../../data/bookings';
-import { updateStationVehicleCounts } from '../../data/stations';
 import styles from './Dashboard.module.scss';
 
 const Dashboard: React.FC = () => {
   // Thống kê tổng quan
-  const totalVehicles = allVehicles.length;
   const totalRenters = mockUsers.filter(user => user.role === 'renter').length;
   const totalBookings = mockBookings.length;
   
@@ -127,26 +124,7 @@ const Dashboard: React.FC = () => {
     }
   ];
 
-  const paymentStats = [
-    {
-      title: 'Đã thanh toán',
-      value: paidBookings,
-      color: '#52c41a',
-      bgColor: '#f6ffed'
-    },
-    {
-      title: 'Chờ thanh toán',
-      value: pendingPayments,
-      color: '#fa8c16',
-      bgColor: '#fff7e6'
-    },
-    {
-      title: 'Đã hoàn tiền',
-      value: refundedBookings,
-      color: '#ff4d4f',
-      bgColor: '#fff2f0'
-    }
-  ];
+
 
   return (
     <div className={styles.dashboard}>

@@ -1,25 +1,61 @@
 'use client'
 import React, { useEffect, useState } from 'react';
 import { Select } from 'antd';
+import { LeftOutlined, RightOutlined } from '@ant-design/icons';
 import { stationService, Station } from '../../services/station.service';
-import { carService } from '../../services/car.service';
+import { vehicleService, Vehicle, getImageUrl } from '../../services/vehicle.service';
 import styles from './map.module.scss';
 
 // Declare Google Maps types
+interface GoogleMap {
+  setCenter: (center: { lat: number; lng: number }) => void;
+  setZoom: (zoom: number) => void;
+}
+
+interface GoogleMarker {
+  addListener: (event: string, handler: () => void) => void;
+}
+
+interface GoogleMapsOptions {
+  zoom?: number;
+  center?: { lat: number; lng: number };
+  mapTypeControl?: boolean;
+  mapTypeControlOptions?: {
+    style?: number;
+    position?: number;
+  };
+  styles?: Array<{
+    featureType?: string;
+    elementType?: string;
+    stylers?: Array<{ visibility?: string }>;
+  }>;
+}
+
+interface MarkerOptions {
+  position?: { lat: number; lng: number };
+  map?: GoogleMap;
+  title?: string;
+  icon?: {
+    url?: string;
+    scaledSize?: { width: number; height: number };
+    anchor?: { x: number; y: number };
+  };
+}
+
 declare global {
   interface Window {
     google: {
       maps: {
-        Map: new (element: HTMLElement, options?: any) => any;
-        Marker: new (options?: any) => any;
-        InfoWindow: new (options?: any) => any;
-        Size: new (width: number, height: number) => any;
-        Point: new (x: number, y: number) => any;
+        Map: new (element: HTMLElement, options?: GoogleMapsOptions) => GoogleMap;
+        Marker: new (options?: MarkerOptions) => GoogleMarker;
+        InfoWindow: new (options?: Record<string, unknown>) => unknown;
+        Size: new (width: number, height: number) => { width: number; height: number };
+        Point: new (x: number, y: number) => { x: number; y: number };
         MapTypeControlStyle: {
-          HORIZONTAL_BAR: any;
+          HORIZONTAL_BAR: number;
         };
         ControlPosition: {
-          TOP_RIGHT: any;
+          TOP_RIGHT: number;
         };
       };
     };
@@ -36,12 +72,15 @@ interface MapStation extends Station {
 const MapPage: React.FC = () => {
   const [stations, setStations] = useState<MapStation[]>([]);
   const [loading, setLoading] = useState(true);
-  const [map, setMap] = useState<any>(null);
+  const [, setMap] = useState<GoogleMap | null>(null);
   const [selectedCity, setSelectedCity] = useState('TP.HCM');
   const [selectedStation, setSelectedStation] = useState<MapStation | null>(null);
-  const [stationCars, setStationCars] = useState<any[]>([]);
+  const [stationVehicles, setStationVehicles] = useState<Vehicle[]>([]);
   const [showCarList, setShowCarList] = useState(false);
-  const [carFiles, setCarFiles] = useState<{[key: number]: string[]}>({});
+  const [vehicleImages, setVehicleImages] = useState<{[key: number]: string[]}>({});
+  const carListRef = React.useRef<HTMLDivElement>(null);
+  const [canScrollLeft, setCanScrollLeft] = useState(false);
+  const [canScrollRight, setCanScrollRight] = useState(false);
 
   useEffect(() => {
     fetchStations();
@@ -87,17 +126,20 @@ const MapPage: React.FC = () => {
       const stationsWithVehicles = await Promise.all(
         apiStations.map(async (station) => {
           try {
-            const cars = await carService.getAllCars();
-            const stationCars = cars.filter(car => car.stationId === station.id);
+            const vehicles = await vehicleService.getVehiclesByStation(station.id);
             
-            // Count unique vehicle types (by name)
-            const uniqueVehicleTypes = new Set(stationCars.map(car => car.name));
+            // Count unique vehicle types (by model name)
+            const uniqueVehicleTypes = new Set(
+              vehicles
+                .filter(v => v.vehicleModel?.name)
+                .map(v => v.vehicleModel!.name)
+            );
             const numberOfVehicleTypes = uniqueVehicleTypes.size;
             
             return {
               ...station,
-              vehicleCount: stationCars.length,
-              availableVehicles: stationCars.filter(car => car.availableCount > 0).length,
+              vehicleCount: vehicles.length,
+              availableVehicles: vehicles.filter(v => v.status === 'available').length,
               numberOfVehicleTypes: numberOfVehicleTypes
             };
           } catch (error) {
@@ -129,31 +171,81 @@ const MapPage: React.FC = () => {
     return centers[city as keyof typeof centers] || centers['TP.HCM'];
   };
 
-  const fetchStationCars = async (stationId: number) => {
+  const fetchStationVehicles = async (stationId: number) => {
     try {
-      const cars = await carService.getAllCars();
-      const stationCars = cars.filter(car => car.stationId === stationId);
+      const vehicles = await vehicleService.getVehiclesByStation(stationId);
       
-      // Fetch images for each car
-      const carFilesData: {[key: number]: string[]} = {};
-      for (const car of stationCars) {
+      // Fetch images for each vehicle
+      const vehicleImagesData: {[key: number]: string[]} = {};
+      for (const vehicle of vehicles) {
         try {
-          const files = await carService.getCarFiles(car.id);
-          carFilesData[car.id] = files.map(file => carService.getImageUrl(file.directus_files_id));
+          if (vehicle.images && vehicle.images.length > 0) {
+            vehicleImagesData[vehicle.id] = vehicle.images.map(image => getImageUrl(image));
+          } else {
+            vehicleImagesData[vehicle.id] = [];
+          }
         } catch (error) {
-          console.error(`Error fetching files for car ${car.id}:`, error);
-          carFilesData[car.id] = [];
+          console.error(`Error fetching images for vehicle ${vehicle.id}:`, error);
+          vehicleImagesData[vehicle.id] = [];
         }
       }
       
-      setStationCars(stationCars);
-      setCarFiles(carFilesData);
+      setStationVehicles(vehicles);
+      setVehicleImages(vehicleImagesData);
     } catch (error) {
-      console.error('Error fetching station cars:', error);
-      setStationCars([]);
-      setCarFiles({});
+      console.error('Error fetching station vehicles:', error);
+      setStationVehicles([]);
+      setVehicleImages({});
     }
   };
+
+  const checkScrollButtons = () => {
+    if (carListRef.current) {
+      const { scrollLeft, scrollWidth, clientWidth } = carListRef.current;
+      setCanScrollLeft(scrollLeft > 0);
+      setCanScrollRight(scrollLeft < scrollWidth - clientWidth - 1);
+    }
+  };
+
+  const scrollCarList = (direction: 'left' | 'right') => {
+    if (carListRef.current) {
+      const scrollAmount = 440; // 420px card width + 16px gap
+      const currentScroll = carListRef.current.scrollLeft;
+      const newScroll = direction === 'left' 
+        ? currentScroll - scrollAmount 
+        : currentScroll + scrollAmount;
+      
+      carListRef.current.scrollTo({
+        left: newScroll,
+        behavior: 'smooth'
+      });
+    }
+  };
+
+  // Check scroll buttons when vehicles change or list is shown
+  useEffect(() => {
+    if (showCarList && stationVehicles.length > 0) {
+      // Wait for DOM to update
+      const timer = setTimeout(() => {
+        checkScrollButtons();
+      }, 100);
+      return () => clearTimeout(timer);
+    }
+  }, [showCarList, stationVehicles]);
+
+  // Check scroll buttons on scroll
+  useEffect(() => {
+    const carList = carListRef.current;
+    if (carList) {
+      carList.addEventListener('scroll', checkScrollButtons);
+      // Also check on resize
+      window.addEventListener('resize', checkScrollButtons);
+      return () => {
+        carList.removeEventListener('scroll', checkScrollButtons);
+        window.removeEventListener('resize', checkScrollButtons);
+      };
+    }
+  }, [showCarList]);
 
   const initMap = () => {
     const mapElement = document.getElementById('map');
@@ -179,9 +271,9 @@ const MapPage: React.FC = () => {
 
     setMap(googleMap);
 
-    // Add markers for each station
+    // Add markers for each station (only if they have vehicles)
     stations.forEach((station) => {
-      if (station.lat && station.lng) {
+      if (station.lat && station.lng && station.vehicleCount && station.vehicleCount > 0) {
         const marker = new window.google.maps.Marker({
           position: { lat: station.lat, lng: station.lng },
           map: googleMap,
@@ -192,7 +284,7 @@ const MapPage: React.FC = () => {
                 <rect x="2" y="2" width="56" height="20" fill="white" stroke="#999" stroke-width="1"/>
                 <polygon points="28,22 32,30 24,30" fill="white" stroke="#999" stroke-width="1"/>
                 <text x="30" y="16" text-anchor="middle" fill="#666" font-size="11" font-weight="bold">
-                  ${station.numberOfVehicleTypes || 0} loại xe
+                  ${station.vehicleCount || 0} xe
                 </text>
               </svg>
             `),
@@ -203,7 +295,7 @@ const MapPage: React.FC = () => {
 
         marker.addListener('click', () => {
           setSelectedStation(station);
-          fetchStationCars(station.id);
+          fetchStationVehicles(station.id);
           setShowCarList(true);
         });
 
@@ -253,39 +345,63 @@ const MapPage: React.FC = () => {
                 ×
               </button>
             </div>
-            <div className={styles.carList}>
-              {stationCars.map((car, index) => (
-                <div key={car.id || index} className={styles.carCard}>
+            <div className={styles.carListWrapper}>
+              {canScrollLeft && (
+                <button 
+                  className={styles.scrollButton}
+                  onClick={() => scrollCarList('left')}
+                  aria-label="Previous"
+                >
+                  <LeftOutlined />
+                </button>
+              )}
+              <div className={styles.carList} ref={carListRef}>
+                {stationVehicles.map((vehicle, index) => (
+                <div key={vehicle.id || index} className={styles.carCard}>
                   <div className={styles.carImage}>
                     <img 
-                      src={carFiles[car.id] && carFiles[car.id][0] ? carFiles[car.id][0] : '/images/car.png'} 
-                      alt={car.name}
+                      src={vehicleImages[vehicle.id] && vehicleImages[vehicle.id][0] 
+                        ? vehicleImages[vehicle.id][0] 
+                        : '/images/car.png'} 
+                      alt={vehicle.vehicleModel?.name || 'Vehicle'}
                       onError={(e) => {
                         (e.target as HTMLImageElement).src = '/images/car.png';
                       }}
                     />
                   </div>
                   <div className={styles.carInfo}>
-                    <h4>{car.name}</h4>
+                    <h4>{vehicle.vehicleModel?.name || 'N/A'}</h4>
                     <p className={styles.carLocation}>{selectedStation.district}, {selectedStation.city}</p>
                     <div className={styles.carRating}>
-                      <span>★{car.rating || '5.0'}</span>
-                      <span>Có sẵn: {car.availableCount || 0} xe</span>
+                      <span>★{vehicle.rating?.toFixed(1) || '5.0'}</span>
+                      <span>Biển số: {vehicle.license_plate}</span>
                     </div>
                     <div className={styles.carPriceRow}>
                       <div className={styles.carPrice}>
-                        {car.price ? Math.round(car.price / 1000).toLocaleString() + 'K' : '0K'} /ngày
+                        {vehicle.vehicleModel?.price 
+                          ? Math.round(vehicle.vehicleModel.price / 1000).toLocaleString() + 'K' 
+                          : '0K'} /ngày
                       </div>
                       <button 
                         className={styles.viewDetailButton}
-                        onClick={() => window.open(`/vehicle/${car.id}`, '_blank')}
+                        onClick={() => window.open(`/vehicle/${vehicle.id}`, '_blank')}
                       >
                         Chi tiết
                       </button>
                     </div>
                   </div>
                 </div>
-              ))}
+                ))}
+              </div>
+              {canScrollRight && (
+                <button 
+                  className={`${styles.scrollButton} ${styles.scrollButtonRight}`}
+                  onClick={() => scrollCarList('right')}
+                  aria-label="Next"
+                >
+                  <RightOutlined />
+                </button>
+              )}
             </div>
           </div>
         )}

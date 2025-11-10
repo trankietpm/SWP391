@@ -1,15 +1,14 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { CarOutlined, ThunderboltOutlined, StarOutlined, LeftOutlined, RightOutlined, CheckOutlined, ClockCircleOutlined, SafetyOutlined, EnvironmentOutlined, PictureOutlined, CloseOutlined } from '@ant-design/icons';
-import { DatePicker } from 'antd';
 import dayjs from 'dayjs';
+import DateRangePicker from '../DateRangePicker/DateRangePicker';
 import Link from 'next/link';
-import { carService, Car } from '../../services/car.service';
+import { vehicleService, Vehicle, getImageUrl } from '../../services/vehicle.service';
 import { stationService, Station } from '../../services/station.service';
 import { bookingService, CreateBookingRequest } from '../../services/booking.service';
-import BookingSuccess from '../BookingSuccess/BookingSuccess';
 import { useAuth } from '../../contexts/AuthContext';
-import { useRouter } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import styles from './DetailVehicle.module.scss';
 
 
@@ -20,27 +19,20 @@ interface DetailVehicleProps {
 const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
   const { isAuthenticated, user } = useAuth();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const [showGallery, setShowGallery] = useState(false);
   const [currentGalleryIndex, setCurrentGalleryIndex] = useState(0);
   const [dateRange, setDateRange] = useState<[dayjs.Dayjs | null, dayjs.Dayjs | null] | null>(null);
   const [totalDays, setTotalDays] = useState(0);
   const [totalPrice, setTotalPrice] = useState(0);
-  const [vehicle, setVehicle] = useState<Car | null>(null);
+  const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [station, setStation] = useState<Station | null>(null);
-  const [carFiles, setCarFiles] = useState<string[]>([]);
+  const [vehicleImages, setVehicleImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const [showDocumentsModal, setShowDocumentsModal] = useState(false);
   const [showCollateralModal, setShowCollateralModal] = useState(false);
   const [isBooking, setIsBooking] = useState(false);
-  const [bookingSuccess, setBookingSuccess] = useState(false);
-  const [bookingData, setBookingData] = useState<{
-    vehicleName: string;
-    stationAddress: string;
-    startDate: string;
-    endDate: string;
-    totalDays: number;
-    totalPrice: number;
-  } | null>(null);
+  const [bookingError, setBookingError] = useState<string | null>(null);
 
   // Prevent body scroll when any modal is open
   useEffect(() => {
@@ -62,33 +54,52 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
     };
   }, []);
 
+  // Initialize dateRange from URL params and remove from URL
+  React.useEffect(() => {
+    const startDate = searchParams.get('startDate');
+    const endDate = searchParams.get('endDate');
+    
+    if (startDate && endDate) {
+      const start = dayjs(startDate, 'YYYY-MM-DD HH:mm');
+      const end = dayjs(endDate, 'YYYY-MM-DD HH:mm');
+      if (start.isValid() && end.isValid()) {
+        setDateRange([start, end]);
+        // Remove query string from URL without reloading
+        if (typeof window !== 'undefined') {
+          window.history.replaceState({}, '', window.location.pathname);
+        }
+      }
+    }
+  }, [searchParams]);
+
   // Fetch vehicle and station data from API
   React.useEffect(() => {
     const fetchData = async () => {
       try {
-        const [vehicleData, stationData] = await Promise.all([
-          carService.getCarById(vehicleId),
-          carService.getCarById(vehicleId).then(car => 
-            car ? stationService.getStationById(car.stationId) : null
-          )
-        ]);
+        const vehicleData = await vehicleService.getVehicleById(vehicleId);
         
         if (vehicleData) {
           setVehicle(vehicleData);
           
-          // Fetch car files for images
-          try {
-            const files = await carService.getCarFiles(vehicleData.id);
-            const imageUrls = files.map(file => carService.getImageUrl(file.directus_files_id));
-            setCarFiles(imageUrls);
-          } catch (error) {
-            console.error('Error fetching car files:', error);
-            setCarFiles([]);
+          // Get images from vehicle.images
+          if (vehicleData.images && vehicleData.images.length > 0) {
+            const imageUrls = vehicleData.images.map(image => getImageUrl(image));
+            setVehicleImages(imageUrls);
+          } else {
+            setVehicleImages([]);
           }
-        }
-        
-        if (stationData) {
-          setStation(stationData);
+          
+          // Fetch station data
+          if (vehicleData.station_id) {
+            try {
+              const stationData = await stationService.getStationById(vehicleData.station_id);
+              if (stationData) {
+                setStation(stationData);
+              }
+            } catch (error) {
+              console.error('Error fetching station:', error);
+            }
+          }
         }
       } catch (error) {
         console.error('Error fetching data:', error);
@@ -104,13 +115,19 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
     if (dateRange && dateRange[0] && dateRange[1]) {
       const start = dateRange[0];
       const end = dateRange[1];
-      const diffDays = end.diff(start, 'day') + 1;
-      setTotalDays(diffDays);
       
-      const pricePerDay = vehicle?.price || 0;
-      setTotalPrice(pricePerDay * diffDays);
+      // Tính theo chu kỳ 24 giờ: tính số giờ chênh lệch và làm tròn lên
+      const diffHours = end.diff(start, 'hour', true); // true để lấy số thập phân chính xác
+      const diffDays = Math.ceil(diffHours / 24); // Làm tròn lên để tính theo chu kỳ 24h
+      
+      // Đảm bảo tối thiểu 1 ngày
+      const finalDays = diffDays < 1 ? 1 : diffDays;
+      setTotalDays(finalDays);
+      
+      const pricePerDay = vehicle?.vehicleModel?.price || 0;
+      setTotalPrice(pricePerDay * finalDays);
     }
-  }, [dateRange, vehicle?.price]);
+  }, [dateRange, vehicle?.vehicleModel?.price]);
 
   const openGallery = () => {
     setShowGallery(true);
@@ -122,14 +139,14 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
   };
 
   const nextImage = () => {
-    if (carFiles.length > 0) {
-      setCurrentGalleryIndex((prev) => (prev + 1) % carFiles.length);
+    if (vehicleImages.length > 0) {
+      setCurrentGalleryIndex((prev) => (prev + 1) % vehicleImages.length);
     }
   };
 
   const prevImage = () => {
-    if (carFiles.length > 0) {
-      setCurrentGalleryIndex((prev) => (prev - 1 + carFiles.length) % carFiles.length);
+    if (vehicleImages.length > 0) {
+      setCurrentGalleryIndex((prev) => (prev - 1 + vehicleImages.length) % vehicleImages.length);
     }
   };
 
@@ -138,80 +155,50 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
   };
 
   const handleBooking = async () => {
+    setBookingError(null);
+    
     // Kiểm tra đăng nhập trước
     if (!isAuthenticated || !user) {
-      alert('Vui lòng đăng nhập để thuê xe');
       router.push('/sign-in');
-      return;
-    }
-
-    // Kiểm tra đã chọn ngày giờ chưa
-    if (!dateRange || !dateRange[0] || !dateRange[1]) {
-      alert('Vui lòng chọn thời gian thuê xe');
-      return;
-    }
-
-    if (!vehicle) {
-      alert('Không tìm thấy thông tin xe');
       return;
     }
 
     setIsBooking(true);
     try {
       const bookingData: CreateBookingRequest = {
-        user_id: user?.id || '1',
-        car_id: vehicle.id,
-        start_date: dateRange[0].toISOString(),
-        end_date: dateRange[1].toISOString(),
+        user_id: user?.user_id || parseInt(user?.id || '0'),
+        vehicle_id: vehicle?.id || 0,
+        station_id: vehicle?.station_id || station?.id || 0,
+        start_date: dateRange?.[0]?.toISOString() || '',
+        end_date: dateRange?.[1]?.toISOString() || '',
         total_days: totalDays,
-        daily_price: vehicle.price,
-        total_price: totalPrice
+        daily_price: vehicle?.vehicleModel?.price || 0,
+        total_price: totalPrice,
+        payment_method: 'vnpay',
       };
 
       const result = await bookingService.createBooking(bookingData);
       
-      // Lưu thông tin booking để hiển thị trong success screen
-      setBookingData({
-        vehicleName: vehicle.name,
-        stationAddress: station?.address || 'Địa chỉ không xác định',
-        startDate: dateRange[0].toISOString(),
-        endDate: dateRange[1].toISOString(),
-        totalDays: totalDays,
-        totalPrice: totalPrice
-      });
+      // Nếu có paymentUrl (VNPay), redirect đến trang thanh toán
+      if (result && typeof result === 'object' && 'paymentUrl' in result && typeof result.paymentUrl === 'string') {
+        window.location.href = result.paymentUrl;
+        return;
+      }
       
-      setBookingSuccess(true);
-      
-      // Reset form
-      setDateRange(null);
-      setTotalDays(0);
-      setTotalPrice(0);
+      // Nếu không có paymentUrl (cash), redirect đến trang success
+      if (result && typeof result === 'object' && 'id' in result && typeof result.id === 'number') {
+        router.push(`/payment/success?bookingId=${result.id}`);
+        return;
+      }
     } catch (error) {
       console.error('Error creating booking:', error);
-      alert('Có lỗi xảy ra khi tạo booking. Vui lòng thử lại.');
+      const errorMessage = error instanceof Error ? error.message : 'Có lỗi xảy ra khi tạo booking. Vui lòng thử lại.';
+      setBookingError(errorMessage);
     } finally {
       setIsBooking(false);
     }
   };
 
-
-  // Hiển thị BookingSuccess component khi booking thành công
-  if (bookingSuccess && bookingData) {
-    return (
-      <BookingSuccess
-        vehicleName={bookingData.vehicleName}
-        stationAddress={bookingData.stationAddress}
-        startDate={bookingData.startDate}
-        endDate={bookingData.endDate}
-        totalDays={bookingData.totalDays}
-        totalPrice={bookingData.totalPrice}
-        onClose={() => {
-          setBookingSuccess(false);
-          setBookingData(null);
-        }}
-      />
-    );
-  }
 
   if (loading) {
     return (
@@ -247,13 +234,13 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
             <Link href="/" className={styles.breadcrumbLink}>Trang chủ</Link>
             <span className={styles.breadcrumbSeparator}>/</span>
             <Link 
-              href={vehicle.type === "Ô tô điện" ? "/vehicles?type=electric-car" : "/vehicles?type=electric-motorcycle"} 
+              href={vehicle.vehicleModel?.type === "Ô tô điện" ? "/vehicles?type=electric-car" : "/vehicles?type=electric-motorcycle"} 
               className={styles.breadcrumbLink}
             >
-              {vehicle.type}
+              {vehicle.vehicleModel?.type || 'Vehicle'}
             </Link>
             <span className={styles.breadcrumbSeparator}>/</span>
-            <span className={styles.breadcrumbCurrent}>{vehicle.name}</span>
+            <span className={styles.breadcrumbCurrent}>{vehicle.vehicleModel?.name || 'Vehicle'}</span>
           </div>
         </div>
 
@@ -261,25 +248,36 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
           <div className={styles.imageGallery}>
             <div className={styles.mainImage}>
               <img 
-                src={carFiles[0] || '/images/car.png'} 
-                alt={vehicle.name}
+                src={vehicleImages[0] || '/images/car.png'} 
+                alt={vehicle.vehicleModel?.name || 'Vehicle'}
+                onClick={vehicleImages.length > 0 ? openGallery : undefined}
+                style={{ cursor: vehicleImages.length > 0 ? 'pointer' : 'default' }}
               />
             </div>
             
-          <div className={styles.sideImages}>
-            {carFiles.slice(1, 4).map((image, index) => (
-              <div key={index} className={styles.sideImage}>
-                <img src={image} alt={`${vehicle.name} ${index + 2}`} />
-                {index === 2 && carFiles.length > 4 && (
-                  <div className={styles.viewAllOverlay} onClick={openGallery}>
-                    <PictureOutlined />
-                    <span>Xem tất cả ảnh</span>
-                  </div>
-                )}
-              </div>
-            ))}
+            <div className={styles.sideImages}>
+              {vehicleImages.length > 1 && (
+                <>
+                  {vehicleImages.slice(1, 4).map((image, index) => (
+                    <div key={index} className={styles.sideImage}>
+                      <img 
+                        src={image} 
+                        alt={`${vehicle.vehicleModel?.name || 'Vehicle'} ${index + 2}`}
+                        onClick={openGallery}
+                        style={{ cursor: 'pointer' }}
+                      />
+                    </div>
+                  ))}
+                  {vehicleImages.length > 4 && (
+                    <div className={styles.viewAllButton} onClick={openGallery}>
+                      <PictureOutlined />
+                      <span>Xem tất cả ảnh</span>
+                    </div>
+                  )}
+                </>
+              )}
+            </div>
           </div>
-        </div>
 
 
         {/* Booking Section */}
@@ -288,102 +286,122 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
           {/* Vehicle Info */}
             <div className={styles.vehicleDetails}>
               <div className={styles.vehicleHeader}>
-                <h2 className={styles.vehicleTitle}>{vehicle.name}</h2>
+                <h2 className={styles.vehicleTitle}>{vehicle.vehicleModel?.name || 'Vehicle'}</h2>
                 <div className={styles.availabilityInfo}>
                   <CarOutlined />
-                  <span>Số lượng còn lại: {vehicle.availableCount} xe</span>
+                  <span>Biển số: {vehicle.license_plate}</span>
               </div>
             </div>
 
               <div className={styles.vehicleLocation}>
                 <div className={styles.locationInfo}>
                   <EnvironmentOutlined />
-                  <span>Địa điểm: {station?.address || 'Địa chỉ không xác định'}</span>
+                  <span>Địa điểm: {station?.address || vehicle.station?.address || 'Địa chỉ không xác định'}</span>
                 </div>
                 <div className={styles.rating}>
                   <StarOutlined />
-                  <span>{vehicle.rating}</span>
+                  <span>{vehicle.rating.toFixed(1)}</span>
               </div>
             </div>
 
-              <div className={styles.vehicleDescription}>
-                  <p>{vehicle.description}</p>
+              {vehicle.vehicleModel?.description && (
+                <div className={styles.vehicleDescription}>
+                  <p>{vehicle.vehicleModel.description}</p>
                 </div>
+              )}
                 
-              <div className={styles.vehicleSpecs}>
-                <h3>Thông số kỹ thuật</h3>
-                <div className={styles.specsGrid}>
-                  <div className={styles.specItem}>
-                    <EnvironmentOutlined />
-                    <div className={styles.specContent}>
-                      <span className={styles.specLabel}>Pin</span>
-                      <span className={styles.specValue}>{vehicle.battery}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <CarOutlined />
-                    <div className={styles.specContent}>
-                      <span className={styles.specLabel}>Tầm hoạt động</span>
-                      <span className={styles.specValue}>{vehicle.range}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <ClockCircleOutlined />
-                    <div className={styles.specContent}>
-                      <span className={styles.specLabel}>Sạc</span>
-                      <span className={styles.specValue}>{vehicle.charging}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <SafetyOutlined />
-                    <div className={styles.specContent}>
-                      <span className={styles.specLabel}>Số chỗ ngồi</span>
-                      <span className={styles.specValue}>{vehicle.seats}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <ThunderboltOutlined />
-                    <div className={styles.specContent}>
-                      <span className={styles.specLabel}>Tốc độ tối đa</span>
-                      <span className={styles.specValue}>{vehicle.topSpeed}</span>
-                    </div>
-                  </div>
-                  <div className={styles.specItem}>
-                    <StarOutlined />
-                    <div className={styles.specContent}>
-                      <span className={styles.specLabel}>Tăng tốc</span>
-                      <span className={styles.specValue}>{vehicle.acceleration}</span>
-                    </div>
+              {vehicle.vehicleModel && (
+                <div className={styles.vehicleSpecs}>
+                  <h3>Thông số kỹ thuật</h3>
+                  <div className={styles.specsGrid}>
+                    {vehicle.vehicleModel.battery && (
+                      <div className={styles.specItem}>
+                        <EnvironmentOutlined />
+                        <div className={styles.specContent}>
+                          <span className={styles.specLabel}>Pin</span>
+                          <span className={styles.specValue}>{vehicle.vehicleModel.battery}</span>
+                        </div>
+                      </div>
+                    )}
+                    {vehicle.vehicleModel.range && (
+                      <div className={styles.specItem}>
+                        <CarOutlined />
+                        <div className={styles.specContent}>
+                          <span className={styles.specLabel}>Tầm hoạt động</span>
+                          <span className={styles.specValue}>{vehicle.vehicleModel.range}</span>
+                        </div>
+                      </div>
+                    )}
+                    {vehicle.vehicleModel.charging && (
+                      <div className={styles.specItem}>
+                        <ClockCircleOutlined />
+                        <div className={styles.specContent}>
+                          <span className={styles.specLabel}>Sạc</span>
+                          <span className={styles.specValue}>{vehicle.vehicleModel.charging}</span>
+                        </div>
+                      </div>
+                    )}
+                    {vehicle.vehicleModel.seats && (
+                      <div className={styles.specItem}>
+                        <SafetyOutlined />
+                        <div className={styles.specContent}>
+                          <span className={styles.specLabel}>Số chỗ ngồi</span>
+                          <span className={styles.specValue}>{vehicle.vehicleModel.seats}</span>
+                        </div>
+                      </div>
+                    )}
+                    {vehicle.vehicleModel.topSpeed && (
+                      <div className={styles.specItem}>
+                        <ThunderboltOutlined />
+                        <div className={styles.specContent}>
+                          <span className={styles.specLabel}>Tốc độ tối đa</span>
+                          <span className={styles.specValue}>{vehicle.vehicleModel.topSpeed}</span>
+                        </div>
+                      </div>
+                    )}
+                    {vehicle.vehicleModel.acceleration && (
+                      <div className={styles.specItem}>
+                        <StarOutlined />
+                        <div className={styles.specContent}>
+                          <span className={styles.specLabel}>Tăng tốc</span>
+                          <span className={styles.specValue}>{vehicle.vehicleModel.acceleration}</span>
+                        </div>
+                      </div>
+                    )}
                   </div>
                 </div>
-              </div>
+              )}
 
-              <div className={styles.vehicleHighlights}>
-                <h3>Điểm nổi bật</h3>
-                <div className={styles.highlightList}>
-                  {vehicle.highlights.map((highlight, index) => (
-                    <div key={index} className={styles.highlightItem}>
-                      <svg aria-hidden="true" role="img" focusable="false" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" style={{color: '#2FA71D'}}>
-                        <path d="M9.71278 3.64026C10.2941 3.14489 10.5847 2.8972 10.8886 2.75195C11.5915 2.41602 12.4085 2.41602 13.1114 2.75195C13.4153 2.8972 13.7059 3.14489 14.2872 3.64026C14.8856 4.15023 15.4938 4.40761 16.2939 4.47146C17.0552 4.53222 17.4359 4.56259 17.7535 4.67477C18.488 4.93421 19.0658 5.51198 19.3252 6.24652C19.4374 6.5641 19.4678 6.94476 19.5285 7.70608C19.5924 8.50621 19.8498 9.11436 20.3597 9.71278C20.8551 10.2941 21.1028 10.5847 21.248 10.8886C21.584 11.5915 21.584 12.4085 21.248 13.1114C21.1028 13.4153 20.8551 13.7059 20.3597 14.2872C19.8391 14.8981 19.5911 15.5102 19.5285 16.2939C19.4678 17.0552 19.4374 17.4359 19.3252 17.7535C19.0658 18.488 18.488 19.0658 17.7535 19.3252C17.4359 19.4374 17.0552 19.4678 16.2939 19.5285C15.4938 19.5924 14.8856 19.8498 14.2872 20.3597C13.7059 20.8551 13.4153 21.1028 13.1114 21.248C12.4085 21.584 11.5915 21.584 10.8886 21.248C10.5847 21.1028 10.2941 20.8551 9.71278 20.3597C9.10185 19.8391 8.48984 19.5911 7.70608 19.5285C6.94476 19.4678 6.5641 19.4374 6.24652 19.3252C5.51198 19.0658 4.93421 18.488 4.67477 17.7535C4.56259 17.4359 4.53222 17.0552 4.47146 16.2939C4.40761 15.4938 4.15023 14.8856 3.64026 14.2872C3.14489 13.7059 2.8972 13.4153 2.75195 13.1114C2.41602 12.4085 2.41602 11.5915 2.75195 10.8886C2.8972 10.5847 3.14489 10.2941 3.64026 9.71278C4.16089 9.10185 4.40892 8.48984 4.47146 7.70608C4.53222 6.94476 4.56259 6.5641 4.67477 6.24652C4.93421 5.51198 5.51198 4.93421 6.24652 4.67477C6.5641 4.56259 6.94476 4.53222 7.70608 4.47146C8.50621 4.40761 9.11436 4.15023 9.71278 3.64026Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                        <path d="M8.66602 12.6334L10.1718 14.3543C10.5952 14.8382 11.3587 14.8025 11.7351 14.2813L15.3327 9.30005" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
-                      </svg>
-                      <span>{highlight}</span>
-                    </div>
-                  ))}
+              {vehicle.vehicleModel?.highlights && vehicle.vehicleModel.highlights.length > 0 && (
+                <div className={styles.vehicleHighlights}>
+                  <h3>Điểm nổi bật</h3>
+                  <div className={styles.highlightList}>
+                    {vehicle.vehicleModel.highlights.map((highlight, index) => (
+                      <div key={index} className={styles.highlightItem}>
+                        <svg aria-hidden="true" role="img" focusable="false" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="20" height="20" style={{color: '#2FA71D'}}>
+                          <path d="M9.71278 3.64026C10.2941 3.14489 10.5847 2.8972 10.8886 2.75195C11.5915 2.41602 12.4085 2.41602 13.1114 2.75195C13.4153 2.8972 13.7059 3.14489 14.2872 3.64026C14.8856 4.15023 15.4938 4.40761 16.2939 4.47146C17.0552 4.53222 17.4359 4.56259 17.7535 4.67477C18.488 4.93421 19.0658 5.51198 19.3252 6.24652C19.4374 6.5641 19.4678 6.94476 19.5285 7.70608C19.5924 8.50621 19.8498 9.11436 20.3597 9.71278C20.8551 10.2941 21.1028 10.5847 21.248 10.8886C21.584 11.5915 21.584 12.4085 21.248 13.1114C21.1028 13.4153 20.8551 13.7059 20.3597 14.2872C19.8391 14.8981 19.5911 15.5102 19.5285 16.2939C19.4678 17.0552 19.4374 17.4359 19.3252 17.7535C19.0658 18.488 18.488 19.0658 17.7535 19.3252C17.4359 19.4374 17.0552 19.4678 16.2939 19.5285C15.4938 19.5924 14.8856 19.8498 14.2872 20.3597C13.7059 20.8551 13.4153 21.1028 13.1114 21.248C12.4085 21.584 11.5915 21.584 10.8886 21.248C10.5847 21.1028 10.2941 20.8551 9.71278 20.3597C9.10185 19.8391 8.48984 19.5911 7.70608 19.5285C6.94476 19.4678 6.5641 19.4374 6.24652 19.3252C5.51198 19.0658 4.93421 18.488 4.67477 17.7535C4.56259 17.4359 4.53222 17.0552 4.47146 16.2939C4.40761 15.4938 4.15023 14.8856 3.64026 14.2872C3.14489 13.7059 2.8972 13.4153 2.75195 13.1114C2.41602 12.4085 2.41602 11.5915 2.75195 10.8886C2.8972 10.5847 3.14489 10.2941 3.64026 9.71278C4.16089 9.10185 4.40892 8.48984 4.47146 7.70608C4.53222 6.94476 4.56259 6.5641 4.67477 6.24652C4.93421 5.51198 5.51198 4.93421 6.24652 4.67477C6.5641 4.56259 6.94476 4.53222 7.70608 4.47146C8.50621 4.40761 9.11436 4.15023 9.71278 3.64026Z" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                          <path d="M8.66602 12.6334L10.1718 14.3543C10.5952 14.8382 11.3587 14.8025 11.7351 14.2813L15.3327 9.30005" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"></path>
+                        </svg>
+                        <span>{highlight}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
-              <div className={styles.vehicleFeatures}>
-                <h3>Tiện ích</h3>
-                <div className={styles.featureGrid}>
-                  {vehicle.features.map((feature, index) => (
-                    <div key={index} className={styles.featureItem}>
-                      <CheckOutlined />
-                      <span>{feature}</span>
-                    </div>
-                  ))}
+              {vehicle.vehicleModel?.features && vehicle.vehicleModel.features.length > 0 && (
+                <div className={styles.vehicleFeatures}>
+                  <h3>Tiện ích</h3>
+                  <div className={styles.featureGrid}>
+                    {vehicle.vehicleModel.features.map((feature, index) => (
+                      <div key={index} className={styles.featureItem}>
+                        <CheckOutlined />
+                        <span>{feature}</span>
+                      </div>
+                    ))}
+                  </div>
                 </div>
-              </div>
+              )}
 
               <div className={styles.vehicleDocuments}>
                 <div className={styles.sectionHeader}>
@@ -552,17 +570,15 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
             <div className={styles.bookingForm}>
               {/* Card 1: Booking */}
               <div className={styles.bookingCard}>
-                <h3>{vehicle.price.toLocaleString()} VNĐ/ngày</h3>
+                <h3>{(vehicle.vehicleModel?.price || 0).toLocaleString()} VNĐ/ngày</h3>
                 <div className={styles.dateSelection}>
                   <div className={styles.dateInput}>
                     <label>Thời gian thuê</label>
-                    <DatePicker.RangePicker
-                      showTime={{ format: 'HH:mm' }}
-                      format="DD/MM/YYYY HH:mm"
-                      placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+                    <DateRangePicker
                       value={dateRange}
                       onChange={setDateRange}
-                      disabledDate={(current) => current && current < dayjs().startOf('day')}
+                      placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+                      format="DD/MM/YYYY HH:mm"
                       style={{ width: '100%', height: '48px' }}
                     />
                   </div>
@@ -587,6 +603,11 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
                   >
                     {isBooking ? 'Đang xử lý...' : 'Thuê ngay'}
                   </button>
+                  {bookingError && (
+                    <div className={styles.bookingError}>
+                      {bookingError}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -594,9 +615,20 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
               <div className={styles.additionalFeesCard}>
                 <h3>Phụ phí có thể phát sinh</h3>
                 <div className={styles.feesList}>
-                  {vehicle.type === "Ô tô điện" ? (
+                  {vehicle.vehicleModel?.type === "Ô tô điện" ? (
                     // Phụ phí cho xe ô tô
                     <>
+                      <div className={styles.feeItem}>
+                        <div className={styles.feeInfo}>
+                          <div className={styles.feeTitle}>
+                            <span className={styles.infoIcon}>!</span>
+                            <span>Phí sạc pin</span>
+                          </div>
+                          <p className={styles.feeDescription}>Phụ phí sạc pin cho ô tô điện theo thực tế sử dụng</p>
+                        </div>
+                        <div className={styles.feePrice}>1.500₫ /1% pin</div>
+                      </div>
+
                       <div className={styles.feeItem}>
                         <div className={styles.feeInfo}>
                           <div className={styles.feeTitle}>
@@ -661,7 +693,7 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
                             <span className={styles.infoIcon}>!</span>
                             <span>Phí quá giờ</span>
                           </div>
-                          <p className={styles.feeDescription}>Phụ phí phát sinh nếu hoàn trả xe trễ giờ</p>
+                          <p className={styles.feeDescription}>Phụ phí phát sinh nếu hoàn trả xe trễ giờ. Trường hợp trễ quá 7 giờ, phụ phí thêm 1 ngày thuê</p>
                         </div>
                         <div className={styles.feePrice}>20.000₫/giờ</div>
                       </div>
@@ -692,7 +724,7 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
             {/* Header */}
             <div className={styles.galleryHeader}>
               <div className={styles.galleryCounter}>
-                {currentGalleryIndex + 1} / {carFiles.length}
+                {currentGalleryIndex + 1} / {vehicleImages.length}
               </div>
               <button className={styles.closeButton} onClick={closeGallery}>
                 <CloseOutlined />
@@ -702,8 +734,8 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
             {/* Main Image */}
             <div className={styles.galleryMainImage}>
               <img 
-                src={carFiles[currentGalleryIndex] || '/images/car.png'} 
-                alt={`${vehicle.name} ${currentGalleryIndex + 1}`}
+                src={vehicleImages[currentGalleryIndex] || '/images/car.png'} 
+                alt={`${vehicle.vehicleModel?.name || 'Vehicle'} ${currentGalleryIndex + 1}`}
               />
               <button className={styles.galleryNavButton} onClick={prevImage}>
                 <LeftOutlined />
@@ -719,13 +751,13 @@ const DetailVehicle: React.FC<DetailVehicleProps> = ({ vehicleId = 1 }) => {
                 <LeftOutlined />
               </button>
               <div className={styles.thumbnailStrip}>
-                {carFiles.map((image, index) => (
+                {vehicleImages.map((image, index) => (
                   <div 
                     key={index}
                     className={`${styles.galleryThumbnail} ${currentGalleryIndex === index ? styles.active : ''}`}
                     onClick={() => goToImage(index)}
                   >
-                    <img src={image} alt={`${vehicle.name} ${index + 1}`} />
+                    <img src={image} alt={`${vehicle.vehicleModel?.name || 'Vehicle'} ${index + 1}`} />
                   </div>
                 ))}
               </div>

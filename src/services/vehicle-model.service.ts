@@ -1,4 +1,5 @@
 import axios from 'axios';
+import { handleApiError } from '../utils/api-error-handler';
 
 const API_BASE_URL = process.env.NEXT_PUBLIC_API_BASE_URL || 'http://localhost:3123';
 
@@ -13,7 +14,6 @@ export interface VehicleModel {
   name: string;
   type: 'Xe máy điện' | 'Ô tô điện';
   price: number;
-  rating: number;
   features: string[];
   isPopular: boolean;
   description?: string;
@@ -40,46 +40,42 @@ export const vehicleModelService = {
   },
 
   async getAllVehicleModels(): Promise<VehicleModel[]> {
-    const response = await axios.get<VehicleModel[]>(`${API_BASE_URL}/vehicle-model`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    try {
+      const response = await axios.get<VehicleModel[]>(`${API_BASE_URL}/vehicle-model`, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi lấy danh sách mẫu xe');
+    }
   },
 
-  async getVehicleModelById(id: number): Promise<VehicleModel> {
-    const response = await axios.get<VehicleModel>(`${API_BASE_URL}/vehicle-model/${id}`, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
-  },
-
-  async getVehicleModelsByType(type: 'Xe máy điện' | 'Ô tô điện'): Promise<VehicleModel[]> {
-    const allModels = await this.getAllVehicleModels();
-    return allModels.filter(model => model.type === type);
-  },
-
-  async getPopularVehicleModels(): Promise<VehicleModel[]> {
-    const allModels = await this.getAllVehicleModels();
-    return allModels.filter(model => model.isPopular);
-  },
 
   async createVehicleModel(
     data: Omit<VehicleModel, 'id' | 'date_created'>
   ): Promise<VehicleModel> {
-    const response = await axios.post<VehicleModel>(`${API_BASE_URL}/vehicle-model`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    try {
+      const response = await axios.post<VehicleModel>(`${API_BASE_URL}/vehicle-model`, data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi tạo mẫu xe');
+    }
   },
 
   async updateVehicleModel(
     id: number,
     data: Partial<Omit<VehicleModel, 'id' | 'date_created'>>
   ): Promise<VehicleModel> {
-    const response = await axios.put<VehicleModel>(`${API_BASE_URL}/vehicle-model/${id}`, data, {
-      headers: this.getAuthHeaders(),
-    });
-    return response.data;
+    try {
+      const response = await axios.put<VehicleModel>(`${API_BASE_URL}/vehicle-model/${id}`, data, {
+        headers: this.getAuthHeaders(),
+      });
+      return response.data;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi cập nhật mẫu xe');
+    }
   },
 
   async deleteVehicleModel(id: number): Promise<boolean> {
@@ -88,8 +84,8 @@ export const vehicleModelService = {
         headers: this.getAuthHeaders(),
       });
       return true;
-    } catch {
-      return false;
+    } catch (error) {
+      return handleApiError(error, 'Có lỗi xảy ra khi xóa mẫu xe');
     }
   },
 };

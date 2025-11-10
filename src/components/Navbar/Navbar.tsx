@@ -1,15 +1,41 @@
 'use client'
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, Suspense } from 'react';
 import Link from 'next/link';
 import { usePathname, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/contexts/AuthContext';
 import styles from './Navbar.module.scss';
 
+function VehicleLinks({ onLinkClick }: { onLinkClick: () => void }) {
+  const searchParams = useSearchParams();
+  
+  return (
+    <>
+      <li>
+        <Link 
+          href="/vehicles?type=electric-motorcycle" 
+          className={searchParams.get('type') === 'electric-motorcycle' ? styles.active : ''}
+          onClick={onLinkClick}
+        >
+          Xe máy điện
+        </Link>
+      </li>
+      <li>
+        <Link 
+          href="/vehicles?type=electric-car" 
+          className={searchParams.get('type') === 'electric-car' ? styles.active : ''}
+          onClick={onLinkClick}
+        >
+          Ô tô điện
+        </Link>
+      </li>
+    </>
+  );
+}
+
 function Navbar() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const pathname = usePathname();
-  const searchParams = useSearchParams();
   const { isAuthenticated, user, logout } = useAuth();
   const profileRef = useRef<HTMLDivElement>(null);
 
@@ -80,24 +106,9 @@ function Navbar() {
               Bản đồ
             </Link>
           </li>
-          <li>
-            <Link 
-              href="/vehicles?type=electric-motorcycle" 
-              className={searchParams.get('type') === 'electric-motorcycle' ? styles.active : ''}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Xe máy điện
-            </Link>
-          </li>
-          <li>
-            <Link 
-              href="/vehicles?type=electric-car" 
-              className={searchParams.get('type') === 'electric-car' ? styles.active : ''}
-              onClick={() => setIsMenuOpen(false)}
-            >
-              Ô tô điện
-            </Link>
-          </li>
+          <Suspense fallback={null}>
+            <VehicleLinks onLinkClick={() => setIsMenuOpen(false)} />
+          </Suspense>
           <li>
             <Link 
               href="/contact" 

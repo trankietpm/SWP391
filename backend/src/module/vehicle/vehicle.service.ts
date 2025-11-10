@@ -1,4 +1,4 @@
-import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
+import { Injectable, NotFoundException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { Vehicle } from './vehicle.entity';
@@ -6,6 +6,7 @@ import { VehicleReqDto } from './dtos/vehicle-req.dto';
 import { VehicleModel } from '../vehicle-model/vehicle-model.entity';
 import { Station } from '../station/station.entity';
 import { VehicleStatus } from '../../enums/vehicle-status.enum';
+import { BookingService } from '../booking/booking.service';
 import { VehicleUploadService } from './vehicle-upload.service';
 
 @Injectable()
@@ -17,6 +18,8 @@ export class VehicleService {
     private readonly vehicleModelRepository: Repository<VehicleModel>,
     @InjectRepository(Station)
     private readonly stationRepository: Repository<Station>,
+    @Inject(forwardRef(() => BookingService))
+    private readonly bookingService: BookingService,
     private readonly uploadService: VehicleUploadService,
   ) {}
 
@@ -49,6 +52,41 @@ export class VehicleService {
     });
   }
 
+  async findAvailableByDateRange(
+    startDate: Date,
+    endDate: Date,
+    stationId?: number,
+    modelId?: number,
+  ): Promise<Vehicle[]> {
+    const where: any = {
+      status: VehicleStatus.AVAILABLE,
+    };
+
+    if (stationId) {
+      where.station_id = stationId;
+    }
+
+    if (modelId) {
+      where.vehicle_model_id = modelId;
+    }
+
+    const allVehicles = await this.vehicleRepository.find({
+      where,
+      relations: ['vehicleModel', 'station'],
+    });
+
+    const vehicleIds = allVehicles.map((v) => v.id);
+    const availabilityMap = await this.bookingService.checkVehiclesAvailability(
+      vehicleIds,
+      startDate,
+      endDate,
+    );
+
+    return allVehicles.filter((vehicle) => {
+      return availabilityMap.get(vehicle.id) === true;
+    });
+  }
+
   async create(vehicleReqDto: VehicleReqDto): Promise<Vehicle> {
     const existingPlate = await this.vehicleRepository.findOne({
       where: { license_plate: vehicleReqDto.license_plate },
@@ -76,15 +114,21 @@ export class VehicleService {
       vehicle_model_id: vehicleReqDto.vehicle_model_id,
       station_id: vehicleReqDto.station_id,
       battery_status: vehicleReqDto.battery_status,
+      odometer: vehicleReqDto.odometer || 0,
       status: VehicleStatus.AVAILABLE,
       license_plate: vehicleReqDto.license_plate,
       images: imagePaths,
+      rating: vehicleReqDto.rating || 0,
     });
     return await this.vehicleRepository.save(vehicle);
   }
 
   async update(id: number, vehicleReqDto: VehicleReqDto): Promise<Vehicle> {
     const vehicle = await this.findOne(id);
+
+    if (vehicleReqDto.status === VehicleStatus.RENTED) {
+      throw new BadRequestException('Không thể tự đặt trạng thái "Đang thuê". Trạng thái này được quản lý tự động bởi hệ thống booking.');
+    }
 
     if (vehicleReqDto.license_plate && vehicleReqDto.license_plate !== vehicle.license_plate) {
       const existingPlate = await this.vehicleRepository.findOne({

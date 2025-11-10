@@ -30,8 +30,8 @@ const AuthFormSection: React.FC<AuthFormSectionProps> = ({
   isLoading = false,
   error = null
 }) => {
-  const [showPassword, setShowPassword] = useState(false);
-  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showPassword] = useState(false);
+  const [showConfirmPassword] = useState(false);
 
   const isLogin = type === 'login';
   

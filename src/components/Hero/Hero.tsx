@@ -1,9 +1,9 @@
 'use client'
 import React, { useState, useEffect } from 'react';
 import { EnvironmentOutlined, CalendarOutlined, CarOutlined, SearchOutlined } from '@ant-design/icons';
-import { DatePicker, Select } from 'antd';
-const { RangePicker } = DatePicker;
+import { Select } from 'antd';
 import dayjs from 'dayjs';
+import DateRangePicker from '../DateRangePicker/DateRangePicker';
 import { stationService } from '../../services/station.service';
 import { useRouter } from 'next/navigation';
 import styles from './Hero.module.scss';
@@ -13,15 +13,10 @@ function Hero() {
   const [searchData, setSearchData] = useState({
     where: '',
     dateRange: null as [dayjs.Dayjs | null, dayjs.Dayjs | null] | null,
-    vehicleType: ''
+    vehicleType: 'both'
   });
 
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
-  const [errors, setErrors] = useState({
-    where: '',
-    vehicleType: '',
-    dateRange: ''
-  });
   const [stations, setStations] = useState<{id: number; name: string; city: string; district: string; status: string}[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -82,58 +77,20 @@ function Hero() {
       [field]: value
     }));
     
-    // Clear error khi user thay đổi input
-    if (errors[field as keyof typeof errors]) {
-      setErrors(prev => ({
-        ...prev,
-        [field]: ''
-      }));
-    }
   };
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
     
-    // Validation: Kiểm tra tất cả trường bắt buộc
-    const newErrors = {
-      where: '',
-      vehicleType: '',
-      dateRange: ''
-    };
-    
-    if (!searchData.where) {
-      newErrors.where = 'Vui lòng chọn trạm thuê xe';
-    }
-    
-    if (!searchData.vehicleType) {
-      newErrors.vehicleType = 'Vui lòng chọn loại xe';
-    }
-    
-    if (!searchData.dateRange || !Array.isArray(searchData.dateRange) || searchData.dateRange.length !== 2) {
-      newErrors.dateRange = 'Vui lòng chọn ngày bắt đầu và kết thúc';
-    } else {
-      const [startDate, endDate] = searchData.dateRange;
-      if (!startDate || !endDate) {
-        newErrors.dateRange = 'Vui lòng chọn ngày bắt đầu và kết thúc';
-      }
-    }
-    
-    // Cập nhật error state
-    setErrors(newErrors);
-    
-    // Nếu có lỗi, dừng lại
-    if (newErrors.where || newErrors.vehicleType || newErrors.dateRange) {
-      return;
-    }
-    
     // Build query parameters
     const params = new URLSearchParams();
     
+    // Nếu có chọn trạm thì thêm vào params, không có thì search tất cả
     if (searchData.where) {
       params.append('station', searchData.where);
     }
     
-    if (searchData.vehicleType) {
+    if (searchData.vehicleType && searchData.vehicleType !== 'both') {
       params.append('type', searchData.vehicleType);
     }
     
@@ -193,7 +150,6 @@ function Hero() {
                   />
                 </div>
               </div>
-              {errors.where && <div className={styles.errorMessage}>{errors.where}</div>}
             </div>
 
             <div className={styles.fieldWrapper}>
@@ -216,7 +172,6 @@ function Hero() {
                   />
                 </div>
               </div>
-              {errors.vehicleType && <div className={styles.errorMessage}>{errors.vehicleType}</div>}
             </div>
 
             <div className={styles.fieldWrapper}>
@@ -225,19 +180,15 @@ function Hero() {
                   <CalendarOutlined />
                 </div>
                 <div className={styles.fieldContent}>
-                  <RangePicker
-                    placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
+                  <DateRangePicker
                     value={searchData.dateRange}
                     onChange={(dates) => handleInputChange('dateRange', dates)}
-                    variant="borderless"
-                    size="large"
+                    placeholder={['Ngày bắt đầu', 'Ngày kết thúc']}
                     format="DD/MM/YYYY HH:mm"
-                    showTime={{ format: 'HH:mm' }}
-                    disabledDate={(current) => current && current < dayjs().startOf('day')}
+                    variant="borderless"
                   />
                 </div>
               </div>
-              {errors.dateRange && <div className={styles.errorMessage}>{errors.dateRange}</div>}
             </div>
 
             <button type="submit" className={styles.searchButton}>

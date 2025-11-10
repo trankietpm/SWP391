@@ -14,6 +14,8 @@ const ConditionalLayout: React.FC<ConditionalLayoutProps> = ({ children }) => {
   const isAuthPage =
     pathname === "/sign-in" ||
     pathname === "/sign-up" ||
+    pathname === "/map" ||
+    pathname === "/payment/success" ||
     pathname.startsWith("/admin");
 
   return (
